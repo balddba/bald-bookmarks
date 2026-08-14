@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+*.egg-info/
+backend/bald_bookmarks/media/thumbnails/*
+!backend/bald_bookmarks/media/thumbnails/.gitkeep
+frontend/node_modules/
+frontend/dist/
+.DS_Store
+*.log

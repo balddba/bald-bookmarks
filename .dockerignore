@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+.uv/
+
+# Frontend (built in its own image)
+frontend/node_modules/
+frontend/dist/
+
+# Local / secrets
+.env
+.git/
+.idea/
+.DS_Store
+*.log
+backend/bald_bookmarks/media/thumbnails/*
+!backend/bald_bookmarks/media/thumbnails/.gitkeep
+
+# Tests not needed in image
+tests/
