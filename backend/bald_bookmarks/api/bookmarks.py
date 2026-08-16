@@ -11,7 +11,7 @@ from bald_bookmarks.domain.bookmarks import (
     BookmarkUpdate,
     ThumbnailStatus,
 )
-from bald_bookmarks.domain.jobs import JobEnqueue, ThumbnailCapturePayload
+from bald_bookmarks.services.thumbnail_jobs import enqueue_thumbnail_capture
 from bald_bookmarks.services.url_metadata import (
     UrlMetadataError,
     UrlMetadataRequest,
@@ -20,26 +20,6 @@ from bald_bookmarks.services.url_metadata import (
 )
 
 router = APIRouter(prefix="/api/bookmarks", tags=["bookmarks"])
-
-
-def _enqueue_thumbnail(
-    driver: DriverDep, bookmark_id: int, settings: SettingsDep
-) -> None:
-    """Enqueue a thumbnail.capture job for a bookmark.
-
-    Args:
-        driver (DriverDep): Database driver.
-        bookmark_id (int): Bookmark primary key.
-        settings (SettingsDep): Application settings.
-    """
-    payload = ThumbnailCapturePayload(bookmark_id=bookmark_id)
-    driver.enqueue_job(
-        JobEnqueue(
-            job_type="thumbnail.capture",
-            payload_json=payload.model_dump_json(),
-            max_attempts=settings.job_max_attempts,
-        )
-    )
 
 
 @router.get("", response_model=list[Bookmark])
@@ -132,7 +112,7 @@ def create_bookmark(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
         ) from exc
-    _enqueue_thumbnail(driver, bookmark.id, settings)
+    enqueue_thumbnail_capture(driver, bookmark.id, settings)
     return bookmark
 
 
@@ -171,7 +151,7 @@ def update_bookmark(
                 thumbnail_updated_at=None,
             ),
         )
-        _enqueue_thumbnail(driver, bookmark_id, settings)
+        enqueue_thumbnail_capture(driver, bookmark_id, settings)
         updated = driver.get_bookmark(bookmark_id)
     return updated
 
@@ -222,5 +202,5 @@ def refresh_thumbnail(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
         ) from exc
-    _enqueue_thumbnail(driver, bookmark_id, settings)
+    enqueue_thumbnail_capture(driver, bookmark_id, settings)
     return bookmark

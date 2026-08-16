@@ -157,3 +157,37 @@ def test_admin_history_includes_failed_job() -> None:
     assert history[0].id == job.id
     assert history[0].status == JobStatus.FAILED
     driver.close()
+
+
+def test_admin_regenerate_all_thumbnails(client: TestClient) -> None:
+    """Bulk thumbnail regeneration enqueues one job per bookmark."""
+    client.post(
+        "/api/bookmarks",
+        json={"title": "One", "url": "https://example.com/one"},
+    )
+    client.post(
+        "/api/bookmarks",
+        json={"title": "Two", "url": "https://example.com/two"},
+    )
+
+    response = client.post("/api/admin/jobs/regenerate-thumbnails")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["job_type"] == "thumbnail.capture"
+    assert body["bookmark_count"] == 2
+    assert body["jobs_enqueued"] == 2
+
+    snapshot = client.get("/api/admin").json()
+    thumbnail_jobs = [
+        job for job in snapshot["queued_jobs"] if job["job_type"] == "thumbnail.capture"
+    ]
+    assert len(thumbnail_jobs) >= 2
+
+
+def test_admin_regenerate_all_thumbnails_empty(client: TestClient) -> None:
+    """Bulk regeneration with no bookmarks enqueues zero jobs."""
+    response = client.post("/api/admin/jobs/regenerate-thumbnails")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["jobs_enqueued"] == 0
+    assert body["bookmark_count"] == 0

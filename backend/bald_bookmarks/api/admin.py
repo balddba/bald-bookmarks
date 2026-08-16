@@ -12,7 +12,9 @@ from bald_bookmarks.domain.admin import (
     SchedulerStatus,
     SchemaStatus,
 )
-from bald_bookmarks.domain.jobs import Job, JobStatus
+from bald_bookmarks.domain.bookmarks import BookmarkThumbnailUpdate, ThumbnailStatus
+from bald_bookmarks.domain.jobs import Job, JobExecutionResult, JobStatus
+from bald_bookmarks.services.thumbnail_jobs import enqueue_thumbnail_capture
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -114,4 +116,39 @@ def get_admin_snapshot(
         ),
         queued_jobs=queued_jobs,
         job_history=job_history,
+    )
+
+
+@router.post("/jobs/regenerate-thumbnails", response_model=JobExecutionResult)
+def regenerate_all_thumbnails(
+    settings: SettingsDep,
+    driver: DriverDep,
+) -> JobExecutionResult:
+    """Enqueue thumbnail capture for every bookmark.
+
+    Resets each bookmark's thumbnail status to pending and queues a
+    thumbnail.capture job for the scheduler to process.
+
+    Args:
+        settings (SettingsDep): Application settings.
+        driver (DriverDep): Database driver.
+
+    Returns:
+        JobExecutionResult: Count of bookmarks and jobs enqueued.
+    """
+    bookmarks = driver.list_bookmarks()
+    for bookmark in bookmarks:
+        driver.update_bookmark_thumbnail(
+            bookmark.id,
+            BookmarkThumbnailUpdate(
+                thumbnail_status=ThumbnailStatus.PENDING,
+                thumbnail_path=None,
+                thumbnail_updated_at=None,
+            ),
+        )
+        enqueue_thumbnail_capture(driver, bookmark.id, settings)
+    return JobExecutionResult(
+        job_type="thumbnail.capture",
+        jobs_enqueued=len(bookmarks),
+        bookmark_count=len(bookmarks),
     )

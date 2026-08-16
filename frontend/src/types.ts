@@ -98,6 +98,12 @@ export interface SchedulerStatus {
   registered_job_types: string[]
 }
 
+export interface JobExecutionResult {
+  job_type: string
+  jobs_enqueued: number
+  bookmark_count: number
+}
+
 export interface AdminSnapshot {
   app_title: string
   app_version: string

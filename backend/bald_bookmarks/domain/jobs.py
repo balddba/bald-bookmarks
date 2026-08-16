@@ -46,6 +46,22 @@ class JobEnqueue(BaseModel):
     max_attempts: int | None = Field(default=None, ge=1)
 
 
+class JobExecutionResult(BaseModel):
+    """Outcome of an admin-triggered bulk job enqueue.
+
+    Attributes:
+        job_type (str): Registered handler key that was enqueued.
+        jobs_enqueued (int): Number of jobs created.
+        bookmark_count (int): Bookmarks included in the operation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    job_type: str
+    jobs_enqueued: int
+    bookmark_count: int
+
+
 class Job(BaseModel):
     """Persisted background job entity.
 

@@ -536,6 +536,44 @@
   font-weight: 600;
 }
 
+.admin-job-actions {
+  display: grid;
+  gap: 0;
+}
+
+.admin-job-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.85rem;
+  border-top: 1px solid var(--bb-line);
+}
+
+.admin-job-action-copy h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.admin-job-action-copy p {
+  margin: 0;
+  color: var(--bb-faint);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  max-width: 36rem;
+}
+
+.admin-job-feedback {
+  margin: 0;
+  padding: 0 0.85rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.admin-job-success {
+  color: #86efac;
+}
+
 .kv-list {
   margin: 0;
   padding: 0.35rem 0;

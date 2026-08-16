@@ -4,6 +4,7 @@ import type {
   Folder,
   FolderTreeNode,
   Job,
+  JobExecutionResult,
   Tag,
 } from './types'
 
@@ -113,4 +114,8 @@ export const api = {
   listTags: () => request<Tag[]>('/api/tags'),
   listJobs: () => request<Job[]>('/api/jobs'),
   getAdminSnapshot: () => request<AdminSnapshot>('/api/admin'),
+  regenerateAllThumbnails: () =>
+    request<JobExecutionResult>('/api/admin/jobs/regenerate-thumbnails', {
+      method: 'POST',
+    }),
 }

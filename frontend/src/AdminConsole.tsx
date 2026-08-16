@@ -88,7 +88,9 @@ export function AdminConsole({ section }: { section: AdminSectionId }) {
       {loading && !snapshot ? (
         <p className="empty-state">Loading admin console…</p>
       ) : null}
-      {snapshot ? <AdminSection snapshot={snapshot} section={section} /> : null}
+      {snapshot ? (
+        <AdminSection snapshot={snapshot} section={section} onReload={reload} />
+      ) : null}
     </div>
   )
 }
@@ -96,9 +98,11 @@ export function AdminConsole({ section }: { section: AdminSectionId }) {
 function AdminSection({
   snapshot,
   section,
+  onReload,
 }: {
   snapshot: AdminSnapshot
   section: AdminSectionId
+  onReload: () => Promise<void>
 }) {
   if (section === 'configuration') {
     return <ConfigurationSection snapshot={snapshot} />
@@ -109,7 +113,7 @@ function AdminSection({
   if (section === 'schema') {
     return <SchemaSection snapshot={snapshot} />
   }
-  return <JobsSection snapshot={snapshot} />
+  return <JobsSection snapshot={snapshot} onReload={onReload} />
 }
 
 function ConfigurationSection({ snapshot }: { snapshot: AdminSnapshot }) {
@@ -218,10 +222,67 @@ function SchemaSection({ snapshot }: { snapshot: AdminSnapshot }) {
   )
 }
 
-function JobsSection({ snapshot }: { snapshot: AdminSnapshot }) {
+function JobsSection({
+  snapshot,
+  onReload,
+}: {
+  snapshot: AdminSnapshot
+  onReload: () => Promise<void>
+}) {
   const { scheduler } = snapshot
+  const [runningJob, setRunningJob] = useState<string | null>(null)
+  const [jobMessage, setJobMessage] = useState<string | null>(null)
+  const [jobError, setJobError] = useState<string | null>(null)
+
+  const runRegenerateThumbnails = useCallback(async () => {
+    setRunningJob('regenerate-thumbnails')
+    setJobMessage(null)
+    setJobError(null)
+    try {
+      const result = await api.regenerateAllThumbnails()
+      setJobMessage(
+        `Queued ${result.jobs_enqueued} thumbnail job${result.jobs_enqueued === 1 ? '' : 's'} for ${result.bookmark_count} bookmark${result.bookmark_count === 1 ? '' : 's'}.`,
+      )
+      await onReload()
+    } catch (err) {
+      setJobError(
+        err instanceof Error ? err.message : 'Failed to regenerate thumbnails',
+      )
+    } finally {
+      setRunningJob(null)
+    }
+  }, [onReload])
+
   return (
     <div className="admin-stack">
+      <section className="panel admin-card">
+        <header className="admin-card-header">
+          <h2>Run jobs</h2>
+        </header>
+        <div className="admin-job-actions">
+          <div className="admin-job-action">
+            <div className="admin-job-action-copy">
+              <h3>Regenerate all thumbnails</h3>
+              <p>
+                Re-capture page previews for every bookmark. Each bookmark is
+                reset to pending and queued for the scheduler.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="primary"
+              isDisabled={runningJob !== null}
+              onPress={() => void runRegenerateThumbnails()}
+            >
+              {runningJob === 'regenerate-thumbnails' ? 'Running…' : 'Run'}
+            </Button>
+          </div>
+        </div>
+        {jobError ? <div className="error-banner admin-job-feedback">{jobError}</div> : null}
+        {jobMessage ? (
+          <p className="admin-job-feedback admin-job-success">{jobMessage}</p>
+        ) : null}
+      </section>
       <section className="panel admin-card">
         <header className="admin-card-header">
           <h2>Scheduler</h2>
