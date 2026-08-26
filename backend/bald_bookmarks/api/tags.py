@@ -9,7 +9,7 @@ from bald_bookmarks.domain.tags import Tag, TagCreate
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 
 
-@router.get("", response_model=list[Tag])
+@router.get("")
 def list_tags(driver: DriverDep) -> list[Tag]:
     """List all tags.
 
@@ -22,7 +22,7 @@ def list_tags(driver: DriverDep) -> list[Tag]:
     return driver.list_tags()
 
 
-@router.post("", response_model=Tag, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def create_tag(payload: TagCreate, driver: DriverDep) -> Tag:
     """Create a tag.
 
@@ -32,6 +32,9 @@ def create_tag(payload: TagCreate, driver: DriverDep) -> Tag:
 
     Returns:
         Tag: Created tag.
+
+    Raises:
+        HTTPException: If tag name already exists.
     """
     try:
         return driver.create_tag(payload)
@@ -48,6 +51,9 @@ def delete_tag(tag_id: int, driver: DriverDep) -> None:
     Args:
         tag_id (int): Tag primary key.
         driver (DriverDep): Database driver.
+
+    Raises:
+        HTTPException: If tag is not found.
     """
     try:
         driver.delete_tag(tag_id)

@@ -134,6 +134,21 @@ function ConfigurationSection({ snapshot }: { snapshot: AdminSnapshot }) {
           label="Oracle password"
           value={config.oracle_password_set ? 'set' : 'not set'}
         />
+        <Kv label="Postgres host" value={config.postgres_host} />
+        <Kv label="Postgres database" value={config.postgres_database} />
+        <Kv label="Postgres user" value={config.postgres_user} />
+        <Kv
+          label="Postgres password"
+          value={config.postgres_password_set ? 'set' : 'not set'}
+        />
+        <Kv label="MySQL host" value={config.mysql_host} />
+        <Kv label="MySQL database" value={config.mysql_database} />
+        <Kv label="MySQL user" value={config.mysql_user} />
+        <Kv
+          label="MySQL password"
+          value={config.mysql_password_set ? 'set' : 'not set'}
+        />
+        <Kv label="SQLite path" value={config.sqlite_path} mono />
         <Kv label="Job poll seconds" value={config.job_poll_seconds} />
         <Kv label="Job max attempts" value={config.job_max_attempts} />
         <Kv label="Media root" value={config.media_root} mono />
@@ -181,7 +196,7 @@ function SchemaSection({ snapshot }: { snapshot: AdminSnapshot }) {
       <dl className="kv-list">
         <Kv
           label="Applies to this driver"
-          value={alembic.applicable ? 'yes (Oracle)' : 'no (memory)'}
+          value={alembic.applicable ? 'yes' : 'no'}
         />
         <Kv label="Deployed revision" value={alembic.current_revision} mono />
         <Kv

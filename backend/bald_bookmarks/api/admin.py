@@ -35,6 +35,17 @@ def public_config(settings: Settings) -> AdminConfig:
         oracle_user=settings.oracle_user,
         oracle_dsn=settings.oracle_dsn,
         oracle_password_set=bool(settings.oracle_password),
+        postgres_host=settings.postgres_host,
+        postgres_port=settings.postgres_port,
+        postgres_user=settings.postgres_user,
+        postgres_database=settings.postgres_database,
+        postgres_password_set=bool(settings.postgres_password),
+        mysql_host=settings.mysql_host,
+        mysql_port=settings.mysql_port,
+        mysql_user=settings.mysql_user,
+        mysql_database=settings.mysql_database,
+        mysql_password_set=bool(settings.mysql_password),
+        sqlite_path=str(settings.sqlite_path),
         job_poll_seconds=settings.job_poll_seconds,
         job_max_attempts=settings.job_max_attempts,
         media_root=str(settings.media_root),
@@ -84,7 +95,7 @@ def _split_jobs(jobs: list[Job]) -> tuple[list[Job], list[Job]]:
     return queued, history
 
 
-@router.get("", response_model=AdminSnapshot)
+@router.get("")
 def get_admin_snapshot(
     request: Request,
     settings: SettingsDep,
@@ -119,7 +130,7 @@ def get_admin_snapshot(
     )
 
 
-@router.post("/jobs/regenerate-thumbnails", response_model=JobExecutionResult)
+@router.post("/jobs/regenerate-thumbnails")
 def regenerate_all_thumbnails(
     settings: SettingsDep,
     driver: DriverDep,

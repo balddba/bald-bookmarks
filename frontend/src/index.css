@@ -6,57 +6,59 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Dockhand-inspired zinc shell */
-  --bb-bg: #09090b;
-  --bb-sidebar: #0c0c0e;
-  --bb-panel: #111113;
-  --bb-elevated: #18181b;
-  --bb-ink: #fafafa;
-  --bb-muted: #a1a1aa;
-  --bb-faint: #71717a;
-  --bb-line: #27272a;
-  --bb-line-strong: #3f3f46;
-  --bb-accent: #3b82f6;
-  --bb-accent-hover: #2563eb;
-  --bb-accent-soft: rgba(59, 130, 246, 0.14);
-  --bb-accent-fg: #eff6ff;
-  --bb-success: #22c55e;
-  --bb-danger: #ef4444;
-  --bb-danger-soft: rgba(239, 68, 68, 0.12);
+  /* Ultra-Dark Modern Palette (Obsidian Void / Neon Electric Purple) */
+  --bb-bg: #06070a;
+  --bb-sidebar: #0a0d14;
+  --bb-panel: #0e121d;
+  --bb-elevated: #141a29;
+  --bb-ink: #f9fafb;
+  --bb-muted: #949ba4;
+  --bb-faint: #626d82;
+  --bb-line: #1c2436;
+  --bb-line-strong: #2b364f;
+  --bb-accent: #9e59ff;
+  --bb-accent-hover: #b175ff;
+  --bb-accent-soft: rgba(158, 89, 255, 0.18);
+  --bb-accent-fg: #ffffff;
+  --bb-accent-active-text: #e2c5ff;
+  --bb-success: #10b981;
+  --bb-danger: #ff4d4d;
+  --bb-danger-soft: rgba(255, 77, 77, 0.18);
 
-  --radius: 0.375rem;
-  --field-radius: 0.375rem;
+  --radius: 0.5rem;
+  --card-radius: 0.75rem;
+  --field-radius: 0.5rem;
 
-  --background: #09090b;
-  --foreground: #fafafa;
-  --surface: #111113;
+  --background: #06070a;
+  --foreground: #f9fafb;
+  --surface: #0e121d;
   --surface-foreground: var(--foreground);
-  --surface-secondary: #18181b;
-  --surface-tertiary: #1f1f23;
-  --overlay: #18181b;
+  --surface-secondary: #141a29;
+  --surface-tertiary: #1b2336;
+  --overlay: #0e121d;
   --overlay-foreground: var(--foreground);
-  --muted: #a1a1aa;
-  --default: #27272a;
-  --default-foreground: #fafafa;
-  --accent: #3b82f6;
-  --accent-foreground: #eff6ff;
-  --field-background: #09090b;
+  --muted: #949ba4;
+  --default: #141a29;
+  --default-foreground: #f9fafb;
+  --accent: #9e59ff;
+  --accent-foreground: #ffffff;
+  --field-background: #0a0d14;
   --field-foreground: var(--foreground);
-  --field-placeholder: #71717a;
-  --field-border: #27272a;
+  --field-placeholder: #626d82;
+  --field-border: #1c2436;
   --field-border-width: 1px;
-  --border: #27272a;
-  --separator: #27272a;
-  --focus: var(--accent);
-  --link: #60a5fa;
-  --segment: #27272a;
+  --border: #1c2436;
+  --separator: #1c2436;
+  --focus: var(--bb-accent);
+  --link: #bb86ff;
+  --segment: #141a29;
   --segment-foreground: var(--foreground);
-  --backdrop: rgba(0, 0, 0, 0.7);
-  --surface-shadow: none;
-  --overlay-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
-  --field-shadow: none;
-  --danger: #ef4444;
-  --danger-foreground: #fef2f2;
+  --backdrop: rgba(6, 7, 10, 0.82);
+  --surface-shadow: 0px 2px 8px rgba(0, 0, 0, 0.6);
+  --overlay-shadow: 0px 24px 32px -4px rgba(0, 0, 0, 0.75);
+  --field-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
+  --danger: #ff4d4d;
+  --danger-foreground: #ffffff;
 }
 
 html {
@@ -102,7 +104,7 @@ button {
   font: inherit;
 }
 
-/* HeroUI → Dockhand-like controls */
+/* HeroUI Controls */
 .button,
 .button--sm,
 .button--md,
@@ -118,14 +120,14 @@ button {
 }
 
 .button {
-  height: 2rem !important;
-  min-height: 2rem !important;
-  padding-inline: 0.75rem !important;
+  height: 2.125rem !important;
+  min-height: 2.125rem !important;
+  padding-inline: 0.85rem !important;
   font-size: 0.8125rem !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   letter-spacing: 0;
   transform: none !important;
-  box-shadow: none !important;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
 .button:active,
@@ -134,23 +136,26 @@ button {
 }
 
 .button--sm {
-  height: 1.75rem !important;
-  min-height: 1.75rem !important;
-  padding-inline: 0.55rem !important;
+  height: 1.85rem !important;
+  min-height: 1.85rem !important;
+  padding-inline: 0.65rem !important;
   font-size: 0.75rem !important;
 }
 
 .button--primary {
   background: var(--bb-accent) !important;
   color: var(--bb-accent-fg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 14px rgba(158, 89, 255, 0.4) !important;
 }
 
 .button--primary:hover {
   background: var(--bb-accent-hover) !important;
+  box-shadow: 0 0 20px rgba(158, 89, 255, 0.6) !important;
 }
 
 .button--secondary {
-  background: transparent !important;
+  background: var(--bb-panel) !important;
   color: var(--bb-ink) !important;
   border: 1px solid var(--bb-line) !important;
 }
@@ -170,12 +175,13 @@ button {
 }
 
 .chip {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.7rem !important;
-  height: 1.35rem;
-  border: 1px solid var(--bb-line);
-  background: var(--bb-elevated) !important;
-  color: var(--bb-muted) !important;
+  height: 1.4rem;
+  border: 1px solid rgba(158, 89, 255, 0.45) !important;
+  background: rgba(158, 89, 255, 0.16) !important;
+  color: #e2c5ff !important;
+  box-shadow: 0 0 8px rgba(158, 89, 255, 0.2) !important;
 }
 
 .tabs__list {
@@ -186,7 +192,7 @@ button {
 }
 
 .tabs__tab {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.75rem !important;
   height: 1.6rem !important;
   color: var(--bb-muted);
@@ -199,8 +205,15 @@ button {
 }
 
 .input {
-  height: 2rem !important;
+  height: 2.125rem !important;
   font-size: 0.8125rem !important;
-  background: var(--bb-bg) !important;
+  background: var(--bb-sidebar) !important;
   border: 1px solid var(--bb-line) !important;
+  box-shadow: var(--field-shadow) !important;
+}
+
+.input:focus-within,
+.input:focus {
+  border-color: var(--bb-accent) !important;
+  box-shadow: 0 0 0 3px rgba(158, 89, 255, 0.35), 0 0 12px rgba(158, 89, 255, 0.25) !important;
 }

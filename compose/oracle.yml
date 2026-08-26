@@ -1,0 +1,18 @@
+# Local Oracle Free for functional driver tests. Credentials are placeholders.
+name: bald-bookmarks-oracle-test
+
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    environment:
+      ORACLE_PASSWORD: changeme
+      APP_USER: bookmarks
+      APP_USER_PASSWORD: changeme
+    ports:
+      - "127.0.0.1:51521:1521"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 90s

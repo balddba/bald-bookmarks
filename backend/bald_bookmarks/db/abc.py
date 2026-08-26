@@ -22,8 +22,8 @@ from bald_bookmarks.domain.tags import Tag, TagCreate
 class DatabaseDriver(ABC):
     """Abstract persistence interface for Bald Bookmarks.
 
-    Concrete drivers implement Oracle (or future engines) while routers and
-    job handlers depend only on this ABC and Pydantic models.
+    Concrete drivers implement Oracle, PostgreSQL, MySQL, or SQLite while
+    routers and job handlers depend only on this ABC and Pydantic models.
     """
 
     @abstractmethod

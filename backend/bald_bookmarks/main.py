@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
+from bald_bookmarks import __version__
 from bald_bookmarks.api import admin, bookmarks, folders, jobs, tags
 from bald_bookmarks.config import Settings, get_settings
 from bald_bookmarks.db.factory import create_driver
@@ -19,7 +20,7 @@ from bald_bookmarks.jobs.scheduler import JobScheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Apply Oracle schema migrations, connect, and start the job scheduler.
+    """Apply schema migrations, connect, and start the job scheduler.
 
     Args:
         app (FastAPI): Application instance.
@@ -57,7 +58,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     registry = build_default_registry()
     scheduler = JobScheduler(driver, registry, resolved)
 
-    app = FastAPI(title="Bald Bookmarks", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Bald Bookmarks", version=__version__, lifespan=lifespan)
     app.state.settings = resolved
     app.state.driver = driver
     app.state.scheduler = scheduler
@@ -93,7 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 def _build_default_app() -> FastAPI:
-    """Create the module-level app, falling back to memory for import/tests.
+    """Create the module-level app, falling back to SQLite for import/tests.
 
     Returns:
         FastAPI: Application instance.
@@ -101,10 +102,11 @@ def _build_default_app() -> FastAPI:
     try:
         return create_app()
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Using memory driver fallback during app import: {}", exc)
+        logger.warning("Using SQLite driver fallback during app import: {}", exc)
         return create_app(
             Settings(
-                DB_DRIVER="memory",
+                DB_DRIVER="sqlite",
+                SQLITE_PATH=Path("backend/bald_bookmarks/data/bookmarks.db"),
                 MEDIA_ROOT=Path("backend/bald_bookmarks/media"),
             )
         )

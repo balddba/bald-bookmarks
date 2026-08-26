@@ -59,6 +59,17 @@ export interface AdminConfig {
   oracle_user: string | null
   oracle_dsn: string | null
   oracle_password_set: boolean
+  postgres_host: string | null
+  postgres_port: number | null
+  postgres_user: string | null
+  postgres_database: string | null
+  postgres_password_set: boolean
+  mysql_host: string | null
+  mysql_port: number | null
+  mysql_user: string | null
+  mysql_database: string | null
+  mysql_password_set: boolean
+  sqlite_path: string
   job_poll_seconds: number
   job_max_attempts: number
   media_root: string

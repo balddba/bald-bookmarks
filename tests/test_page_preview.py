@@ -9,13 +9,21 @@ from bald_bookmarks.services.page_preview import PagePreviewError, capture_page_
 
 
 def test_capture_page_preview_rejects_bad_url(tmp_path: Path) -> None:
-    """Invalid schemes raise PagePreviewError before launching a browser."""
+    """Invalid schemes raise PagePreviewError before launching a browser.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
     with pytest.raises(PagePreviewError, match="http"):
         capture_page_preview("ftp://example.com", tmp_path / "out.png")
 
 
 def test_capture_page_preview_writes_png(tmp_path: Path) -> None:
-    """Successful capture writes a non-empty PNG via Playwright."""
+    """Successful capture writes a non-empty PNG via Playwright.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
     destination = tmp_path / "preview.png"
     fake_page = MagicMock()
     fake_browser = MagicMock()
@@ -65,7 +73,11 @@ def test_capture_page_preview_writes_png(tmp_path: Path) -> None:
 
 
 def test_capture_page_preview_maps_playwright_errors(tmp_path: Path) -> None:
-    """Playwright failures become PagePreviewError."""
+    """Playwright failures become PagePreviewError.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
     from playwright.sync_api import Error as PlaywrightError
 
     fake_playwright = MagicMock()

@@ -81,7 +81,11 @@ def test_normalize_preview_url_rejects_credentials() -> None:
 
 
 def test_url_preview_endpoint_success(client: TestClient) -> None:
-    """Preview endpoint returns parsed metadata from a mocked fetch."""
+    """Preview endpoint returns parsed metadata from a mocked fetch.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     html = b"<html><head><title>Example Domain</title></head></html>"
     request = httpx.Request("GET", "https://example.com/")
     response = httpx.Response(
@@ -119,7 +123,11 @@ def test_url_preview_endpoint_success(client: TestClient) -> None:
 
 
 def test_url_preview_endpoint_rejects_invalid_url(client: TestClient) -> None:
-    """Preview endpoint rejects unsupported URL schemes."""
+    """Preview endpoint rejects unsupported URL schemes.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     result = client.post(
         "/api/bookmarks/url-preview",
         json={"url": "javascript:alert(1)"},

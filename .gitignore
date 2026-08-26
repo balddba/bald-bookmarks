@@ -9,6 +9,10 @@ dist/
 *.egg-info/
 backend/bald_bookmarks/media/thumbnails/*
 !backend/bald_bookmarks/media/thumbnails/.gitkeep
+backend/bald_bookmarks/data/*.db
+backend/bald_bookmarks/data/*.db-*
+!backend/bald_bookmarks/data/demo.db
+!demo.db
 frontend/node_modules/
 frontend/dist/
 .DS_Store

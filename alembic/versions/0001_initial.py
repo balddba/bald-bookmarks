@@ -10,6 +10,12 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from bald_bookmarks.db.alembic_helpers import (
+    integer_pk,
+    server_timestamp_now,
+    timestamp_type,
+)
+
 revision: str = "0001_initial"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
@@ -18,9 +24,12 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Create core bookmark tables."""
+    now = server_timestamp_now()
+    ts = timestamp_type()
+    table_kwargs = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
     op.create_table(
         "folders",
-        sa.Column("id", sa.Integer(), sa.Identity(), primary_key=True),
+        integer_pk(),
         sa.Column(
             "parent_id", sa.Integer(), sa.ForeignKey("folders.id"), nullable=True
         ),
@@ -28,36 +37,38 @@ def upgrade() -> None:
         sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
         sa.Column(
             "created_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
         sa.Column(
             "updated_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
+        **table_kwargs,
     )
     op.create_index("ix_folders_parent_id", "folders", ["parent_id"])
 
     op.create_table(
         "tags",
-        sa.Column("id", sa.Integer(), sa.Identity(), primary_key=True),
+        integer_pk(),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column(
             "created_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
         sa.UniqueConstraint("name", name="uq_tags_name"),
+        **table_kwargs,
     )
     # Oracle unique constraints already index the column list (ORA-01408).
 
     op.create_table(
         "bookmarks",
-        sa.Column("id", sa.Integer(), sa.Identity(), primary_key=True),
+        integer_pk(),
         sa.Column(
             "folder_id", sa.Integer(), sa.ForeignKey("folders.id"), nullable=True
         ),
@@ -71,19 +82,20 @@ def upgrade() -> None:
             server_default="pending",
         ),
         sa.Column("thumbnail_path", sa.String(length=1024), nullable=True),
-        sa.Column("thumbnail_updated_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("thumbnail_updated_at", ts, nullable=True),
         sa.Column(
             "created_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
         sa.Column(
             "updated_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
+        **table_kwargs,
     )
     op.create_index("ix_bookmarks_folder_id", "bookmarks", ["folder_id"])
 
@@ -101,32 +113,34 @@ def upgrade() -> None:
             sa.ForeignKey("tags.id", ondelete="CASCADE"),
             primary_key=True,
         ),
+        **table_kwargs,
     )
 
     op.create_table(
         "jobs",
-        sa.Column("id", sa.Integer(), sa.Identity(), primary_key=True),
+        integer_pk(),
         sa.Column("job_type", sa.String(length=128), nullable=False),
         sa.Column("payload_json", sa.Text(), nullable=False),
         sa.Column("status", sa.String(length=32), nullable=False),
         sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("max_attempts", sa.Integer(), nullable=False, server_default="3"),
-        sa.Column("scheduled_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("scheduled_at", ts, nullable=False),
+        sa.Column("started_at", ts, nullable=True),
+        sa.Column("finished_at", ts, nullable=True),
         sa.Column("last_error", sa.Text(), nullable=True),
         sa.Column(
             "created_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
         sa.Column(
             "updated_at",
-            sa.DateTime(timezone=True),
+            ts,
             nullable=False,
-            server_default=sa.text("SYSTIMESTAMP"),
+            server_default=now,
         ),
+        **table_kwargs,
     )
     op.create_index("ix_jobs_status", "jobs", ["status"])
     op.create_index("ix_jobs_scheduled_at", "jobs", ["scheduled_at"])

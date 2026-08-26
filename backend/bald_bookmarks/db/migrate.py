@@ -1,4 +1,4 @@
-"""Apply Alembic schema migrations for the Oracle driver."""
+"""Apply Alembic schema migrations for relational drivers."""
 
 from pathlib import Path
 
@@ -9,6 +9,9 @@ from loguru import logger
 
 from bald_bookmarks.config import Settings
 from bald_bookmarks.domain.admin import SchemaRevision, SchemaStatus
+
+# Driver names that persist schema with Alembic.
+SCHEMA_MIGRATION_DRIVERS = frozenset({"oracle", "postgres", "mysql", "sqlite"})
 
 
 def find_alembic_root() -> Path:
@@ -78,8 +81,7 @@ def describe_schema(
 ) -> SchemaStatus:
     """Compare the deployed Alembic revision with local script heads.
 
-    Memory driver deployments do not persist alembic_version, so
-    current_revision is omitted and is_current stays unset.
+    When current_revision is omitted, is_current stays unset.
 
     Args:
         settings (Settings): Application settings.
@@ -90,7 +92,7 @@ def describe_schema(
     Returns:
         SchemaStatus: Local heads, revision chain, and current match state.
     """
-    applicable = settings.db_driver.strip().lower() == "oracle"
+    applicable = settings.normalized_driver in SCHEMA_MIGRATION_DRIVERS
     try:
         script = ScriptDirectory.from_config(alembic_config(alembic_root))
     except FileNotFoundError as exc:
@@ -128,21 +130,21 @@ def upgrade_schema(
     settings: Settings,
     alembic_root: Path | None = None,
 ) -> None:
-    """Apply Alembic migrations to head when using Oracle.
+    """Apply Alembic migrations to head for relational drivers.
 
-    Memory driver startups skip this. The upgrade is idempotent when the
-    schema is already current.
+    The upgrade is idempotent when the schema is already current.
 
     Args:
         settings (Settings): Application settings.
         alembic_root (Path | None): Optional directory containing alembic.ini.
 
     Raises:
-        FileNotFoundError: If alembic.ini is missing for an Oracle startup.
+        FileNotFoundError: If alembic.ini is missing for a relational startup.
     """
-    if settings.db_driver.strip().lower() != "oracle":
+    if settings.normalized_driver not in SCHEMA_MIGRATION_DRIVERS:
         return
     config = alembic_config(alembic_root)
+    config.attributes["settings"] = settings
     logger.info("Applying Alembic migrations to head")
     command.upgrade(config, "head")
     logger.info("Alembic migrations applied")

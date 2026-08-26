@@ -1,4 +1,4 @@
-"""Tests for Alembic schema upgrades on Oracle startup."""
+"""Tests for Alembic schema upgrades on relational driver startup."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -25,6 +25,45 @@ def _oracle_settings() -> Settings:
     )
 
 
+def _postgres_settings() -> Settings:
+    """Build PostgreSQL settings that do not require a live database.
+
+    Returns:
+        Settings: Validated PostgreSQL driver settings.
+    """
+    return Settings(
+        db_driver="postgres",
+        postgres_host="localhost",
+        postgres_user="bookmarks",
+        postgres_password="secret",
+        postgres_database="bald_bookmarks",
+    )
+
+
+def _mysql_settings() -> Settings:
+    """Build MySQL settings that do not require a live database.
+
+    Returns:
+        Settings: Validated MySQL driver settings.
+    """
+    return Settings(
+        db_driver="mysql",
+        mysql_host="localhost",
+        mysql_user="bookmarks",
+        mysql_password="secret",
+        mysql_database="bald_bookmarks",
+    )
+
+
+def _sqlite_settings() -> Settings:
+    """Build SQLite settings that do not require a live database.
+
+    Returns:
+        Settings: Validated SQLite driver settings.
+    """
+    return Settings(db_driver="sqlite")
+
+
 def test_find_alembic_root_from_repo() -> None:
     """Discover alembic.ini from the repository layout."""
     root = find_alembic_root()
@@ -32,19 +71,37 @@ def test_find_alembic_root_from_repo() -> None:
     assert (root / "alembic" / "env.py").is_file()
 
 
-def test_upgrade_schema_skips_memory() -> None:
-    """Memory driver startups do not invoke Alembic."""
-    settings = Settings(db_driver="memory")
-    with patch("bald_bookmarks.db.migrate.command.upgrade") as upgrade:
-        upgrade_schema(settings)
-    upgrade.assert_not_called()
+def test_upgrade_schema_runs_alembic_for_sqlite(tmp_path: Path) -> None:
+    """SQLite startups apply Alembic migrations to a local file.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
+    settings = Settings(
+        db_driver="sqlite",
+        sqlite_path=tmp_path / "bookmarks.db",
+    )
+    upgrade_schema(settings)
+    assert (tmp_path / "bookmarks.db").is_file()
 
 
-def test_upgrade_schema_runs_alembic_for_oracle(tmp_path: Path) -> None:
-    """Oracle startups apply Alembic migrations to head."""
+@pytest.mark.parametrize(
+    "settings",
+    [_oracle_settings(), _postgres_settings(), _mysql_settings(), _sqlite_settings()],
+    ids=["oracle", "postgres", "mysql", "sqlite"],
+)
+def test_upgrade_schema_runs_alembic_for_relational_drivers(
+    tmp_path: Path,
+    settings: Settings,
+) -> None:
+    """Relational driver startups apply Alembic migrations to head.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+        settings (Settings): Driver configuration.
+    """
     (tmp_path / "alembic.ini").write_text("[alembic]\nscript_location = alembic\n")
     (tmp_path / "alembic").mkdir()
-    settings = _oracle_settings()
     with patch("bald_bookmarks.db.migrate.command.upgrade") as upgrade:
         upgrade_schema(settings, alembic_root=tmp_path)
     upgrade.assert_called_once()
@@ -61,16 +118,25 @@ def test_alembic_config_points_at_script_location() -> None:
 
 
 def test_upgrade_schema_requires_alembic_ini(tmp_path: Path) -> None:
-    """Oracle startups fail fast when alembic.ini is missing."""
+    """Relational startups fail fast when alembic.ini is missing.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
     settings = _oracle_settings()
     with pytest.raises(FileNotFoundError, match="alembic.ini"):
         upgrade_schema(settings, alembic_root=tmp_path)
 
 
 def test_lifespan_runs_schema_upgrade(tmp_path: Path) -> None:
-    """API lifespan applies schema upgrades before serving requests."""
+    """API lifespan applies schema upgrades before serving requests.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
     settings = Settings(
-        db_driver="memory",
+        db_driver="sqlite",
+        sqlite_path=tmp_path / "bookmarks.db",
         media_root=tmp_path / "media",
         job_poll_seconds=0.05,
     )
@@ -89,6 +155,9 @@ def test_initial_migration_uses_unique_constraint_for_tag_name() -> None:
     assert "ix_tags_name" not in text
     assert "sa.Clob(" not in text
     assert "sa.Text()" in text
+    assert "server_timestamp_now" in text
+    assert "integer_pk" in text
+    assert "SYSTIMESTAMP" not in text
 
 
 def test_description_varchar_migration_follows_initial() -> None:

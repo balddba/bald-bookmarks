@@ -13,10 +13,21 @@ class Settings(BaseSettings):
     """Validated runtime configuration for Bald Bookmarks.
 
     Attributes:
-        db_driver (str): Database driver name (oracle or memory).
+        db_driver (str): Database driver name (oracle, postgres, mysql, or sqlite).
         oracle_user (str | None): Oracle username.
         oracle_password (str | None): Oracle password.
         oracle_dsn (str | None): Oracle Easy Connect or TNS DSN.
+        postgres_host (str | None): PostgreSQL hostname.
+        postgres_port (int): PostgreSQL port.
+        postgres_user (str | None): PostgreSQL username.
+        postgres_password (str | None): PostgreSQL password.
+        postgres_database (str | None): PostgreSQL database name.
+        mysql_host (str | None): MySQL hostname.
+        mysql_port (int): MySQL port.
+        mysql_user (str | None): MySQL username.
+        mysql_password (str | None): MySQL password.
+        mysql_database (str | None): MySQL database name.
+        sqlite_path (Path): Filesystem path to the SQLite database file.
         job_poll_seconds (float): Seconds between job poll cycles.
         job_max_attempts (int): Max attempts before a job is failed.
         media_root (Path): Root directory for thumbnail media files.
@@ -38,6 +49,20 @@ class Settings(BaseSettings):
     oracle_user: str | None = Field(default=None, alias="ORACLE_USER")
     oracle_password: str | None = Field(default=None, alias="ORACLE_PASSWORD")
     oracle_dsn: str | None = Field(default=None, alias="ORACLE_DSN")
+    postgres_host: str | None = Field(default=None, alias="POSTGRES_HOST")
+    postgres_port: int = Field(default=5432, alias="POSTGRES_PORT", ge=1, le=65535)
+    postgres_user: str | None = Field(default=None, alias="POSTGRES_USER")
+    postgres_password: str | None = Field(default=None, alias="POSTGRES_PASSWORD")
+    postgres_database: str | None = Field(default=None, alias="POSTGRES_DATABASE")
+    mysql_host: str | None = Field(default=None, alias="MYSQL_HOST")
+    mysql_port: int = Field(default=3306, alias="MYSQL_PORT", ge=1, le=65535)
+    mysql_user: str | None = Field(default=None, alias="MYSQL_USER")
+    mysql_password: str | None = Field(default=None, alias="MYSQL_PASSWORD")
+    mysql_database: str | None = Field(default=None, alias="MYSQL_DATABASE")
+    sqlite_path: Path = Field(
+        default=Path("backend/bald_bookmarks/data/bookmarks.db"),
+        alias="SQLITE_PATH",
+    )
     job_poll_seconds: float = Field(default=5.0, alias="JOB_POLL_SECONDS")
     job_max_attempts: int = Field(default=3, alias="JOB_MAX_ATTEMPTS")
     media_root: Path = Field(
@@ -89,17 +114,30 @@ class Settings(BaseSettings):
             return [part.strip() for part in stripped.split(",") if part.strip()]
         return value
 
+    @property
+    def normalized_driver(self) -> str:
+        """Return the canonical driver name.
+
+        Returns:
+            str: Lowercased driver name with postgresql mapped to postgres.
+        """
+        name = self.db_driver.strip().lower()
+        if name == "postgresql":
+            return "postgres"
+        return name
+
     @model_validator(mode="after")
-    def require_oracle_when_needed(self) -> "Settings":
-        """Fail fast when Oracle credentials are missing for the oracle driver.
+    def require_credentials_when_needed(self) -> "Settings":
+        """Fail fast when the selected driver is missing connection fields.
 
         Returns:
             Settings: Validated settings.
 
         Raises:
-            ValueError: If oracle driver lacks required connection fields.
+            ValueError: If the selected driver lacks required connection fields.
         """
-        if self.db_driver.strip().lower() == "oracle":
+        driver = self.normalized_driver
+        if driver == "oracle":
             missing = [
                 name
                 for name, value in (
@@ -112,6 +150,36 @@ class Settings(BaseSettings):
             if missing:
                 raise ValueError(
                     "Oracle driver requires settings: " + ", ".join(missing)
+                )
+        elif driver == "postgres":
+            missing = [
+                name
+                for name, value in (
+                    ("POSTGRES_HOST", self.postgres_host),
+                    ("POSTGRES_USER", self.postgres_user),
+                    ("POSTGRES_PASSWORD", self.postgres_password),
+                    ("POSTGRES_DATABASE", self.postgres_database),
+                )
+                if not value
+            ]
+            if missing:
+                raise ValueError(
+                    "PostgreSQL driver requires settings: " + ", ".join(missing)
+                )
+        elif driver == "mysql":
+            missing = [
+                name
+                for name, value in (
+                    ("MYSQL_HOST", self.mysql_host),
+                    ("MYSQL_USER", self.mysql_user),
+                    ("MYSQL_PASSWORD", self.mysql_password),
+                    ("MYSQL_DATABASE", self.mysql_database),
+                )
+                if not value
+            ]
+            if missing:
+                raise ValueError(
+                    "MySQL driver requires settings: " + ", ".join(missing)
                 )
         return self
 
@@ -132,9 +200,75 @@ class Settings(BaseSettings):
             "dsn": self.oracle_dsn,
         }
 
-    @property
-    def sqlalchemy_url(self) -> str:
-        """Build the SQLAlchemy URL used by Alembic offline mode.
+    def postgres_connect_args(self) -> dict[str, str | int]:
+        """Return PostgreSQL connection fields used by the driver and Alembic.
+
+        Returns:
+            dict[str, str | int]: host, port, user, password, and database.
+
+        Raises:
+            ValueError: If PostgreSQL connection settings are incomplete.
+        """
+        if (
+            not self.postgres_host
+            or not self.postgres_user
+            or not self.postgres_password
+            or not self.postgres_database
+        ):
+            raise ValueError("PostgreSQL connection settings are required for Alembic")
+        return {
+            "host": self.postgres_host,
+            "port": self.postgres_port,
+            "user": self.postgres_user,
+            "password": self.postgres_password,
+            "database": self.postgres_database,
+        }
+
+    def mysql_connect_args(self) -> dict[str, str | int]:
+        """Return MySQL connection fields used by the driver and Alembic.
+
+        Returns:
+            dict[str, str | int]: host, port, user, password, and database.
+
+        Raises:
+            ValueError: If MySQL connection settings are incomplete.
+        """
+        if (
+            not self.mysql_host
+            or not self.mysql_user
+            or not self.mysql_password
+            or not self.mysql_database
+        ):
+            raise ValueError("MySQL connection settings are required for Alembic")
+        return {
+            "host": self.mysql_host,
+            "port": self.mysql_port,
+            "user": self.mysql_user,
+            "password": self.mysql_password,
+            "database": self.mysql_database,
+        }
+
+    def sqlite_db_path(self) -> Path:
+        """Return the expanded SQLite database path.
+
+        Returns:
+            Path: Filesystem path to the SQLite file.
+        """
+        return Path(self.sqlite_path).expanduser()
+
+    def _sqlite_sqlalchemy_url(self) -> str:
+        """Build the SQLite SQLAlchemy URL used by Alembic.
+
+        Returns:
+            str: SQLite URL using the pysqlite driver.
+        """
+        path = self.sqlite_db_path()
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        return f"sqlite+pysqlite:///{path.as_posix()}"
+
+    def _oracle_sqlalchemy_url(self) -> str:
+        """Build the Oracle SQLAlchemy URL used by Alembic offline mode.
 
         Easy Connect values of the form host:port/service are emitted as a
         service_name query parameter. SQLAlchemy otherwise treats the path as a SID.
@@ -160,6 +294,65 @@ class Settings(BaseSettings):
                 f"?service_name={quote_plus(service)}"
             )
         return f"oracle+oracledb://{user}:{password}@{dsn}"
+
+    def _postgres_sqlalchemy_url(self) -> str:
+        """Build the PostgreSQL SQLAlchemy URL.
+
+        Returns:
+            str: PostgreSQL URL using the psycopg driver.
+
+        Raises:
+            ValueError: If PostgreSQL connection settings are incomplete.
+        """
+        args = self.postgres_connect_args()
+        user = quote_plus(str(args["user"]))
+        password = quote_plus(str(args["password"]))
+        host = str(args["host"])
+        database = quote_plus(str(args["database"]))
+        return (
+            f"postgresql+psycopg://{user}:{password}@{host}:{args['port']}/{database}"
+        )
+
+    def _mysql_sqlalchemy_url(self) -> str:
+        """Build the MySQL SQLAlchemy URL.
+
+        Returns:
+            str: MySQL URL using the mysqlconnector driver.
+
+        Raises:
+            ValueError: If MySQL connection settings are incomplete.
+        """
+        args = self.mysql_connect_args()
+        user = quote_plus(str(args["user"]))
+        password = quote_plus(str(args["password"]))
+        host = str(args["host"])
+        database = quote_plus(str(args["database"]))
+        return (
+            f"mysql+mysqlconnector://{user}:{password}@{host}:{args['port']}/"
+            f"{database}?charset=utf8mb4"
+        )
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        """Build the SQLAlchemy URL used by Alembic for the selected driver.
+
+        Runtime drivers use native DBAPI clients (oracledb, psycopg,
+        mysql-connector, sqlite3). This URL is only for Alembic migrations.
+
+        Returns:
+            str: SQLAlchemy URL for Oracle, PostgreSQL, MySQL, or SQLite.
+
+        Raises:
+            ValueError: If required connection settings are incomplete.
+        """
+        driver = self.normalized_driver
+        if driver == "postgres":
+            return self._postgres_sqlalchemy_url()
+        if driver == "mysql":
+            return self._mysql_sqlalchemy_url()
+        if driver == "sqlite":
+            return self._sqlite_sqlalchemy_url()
+        return self._oracle_sqlalchemy_url()
 
     @property
     def thumbnails_dir(self) -> Path:

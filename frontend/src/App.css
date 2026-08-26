@@ -19,22 +19,19 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.9rem 1rem;
+  height: 3.5rem;
+  padding: 0 1rem;
   border-bottom: 1px solid var(--bb-line);
+  flex-shrink: 0;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.375rem;
-  background: var(--bb-accent);
-  color: #eff6ff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+.brand-logo {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
   flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(158, 89, 255, 0.5);
 }
 
 .brand-text {
@@ -49,12 +46,14 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--bb-ink);
+  line-height: 1.2;
 }
 
 .brand-sub {
   margin: 0;
   font-size: 0.6875rem;
   color: var(--bb-faint);
+  line-height: 1.2;
 }
 
 .sidebar-section {
@@ -99,7 +98,7 @@
 
 .nav-item.is-active {
   background: var(--bb-accent-soft);
-  color: #93c5fd;
+  color: var(--bb-accent-active-text);
   box-shadow: inset 2px 0 0 var(--bb-accent);
 }
 
@@ -139,7 +138,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.55rem 1rem;
+  height: 3.5rem;
+  padding: 0 1rem;
   border-bottom: 1px solid var(--bb-line);
   background: color-mix(in srgb, var(--bb-panel) 70%, transparent);
   backdrop-filter: blur(8px);
@@ -187,14 +187,15 @@
 
 .search-field input {
   min-width: 220px;
-  height: 2rem;
+  height: 2.125rem;
   border: 1px solid var(--bb-line);
-  background: var(--bb-bg);
+  background: var(--bb-sidebar);
   color: var(--bb-ink);
-  border-radius: 0.375rem;
-  padding: 0 2.1rem 0 0.7rem;
+  border-radius: var(--radius);
+  padding: 0 2.1rem 0 0.75rem;
   outline: none;
   font-size: 0.8125rem;
+  box-shadow: var(--field-shadow);
 }
 
 .search-field input::placeholder {
@@ -202,7 +203,8 @@
 }
 
 .search-field input:focus {
-  border-color: color-mix(in srgb, var(--bb-accent) 65%, var(--bb-line));
+  border-color: var(--bb-accent);
+  box-shadow: 0 0 0 3px rgba(158, 89, 255, 0.35), 0 0 12px rgba(158, 89, 255, 0.25);
 }
 
 .search-kbd {
@@ -262,7 +264,8 @@
 .panel {
   background: var(--bb-panel);
   border: 1px solid var(--bb-line);
-  border-radius: 0.5rem;
+  border-radius: var(--card-radius);
+  box-shadow: var(--surface-shadow);
   overflow: hidden;
 }
 
@@ -329,7 +332,7 @@
 .folder-row:hover,
 .breadcrumbs button:hover {
   background: var(--bb-accent-soft);
-  color: #93c5fd;
+  color: var(--bb-accent-active-text);
 }
 
 .folder-toggle {
@@ -462,7 +465,7 @@
 }
 
 .bookmark-title:hover {
-  color: #93c5fd;
+  color: var(--bb-accent-active-text);
 }
 
 .bookmark-url,
@@ -698,7 +701,7 @@
 .modal-panel {
   width: min(460px, 100%);
   background: var(--bb-panel);
-  border-radius: 0.5rem;
+  border-radius: var(--card-radius);
   padding: 0;
   border: 1px solid var(--bb-line);
   box-shadow: var(--overlay-shadow);

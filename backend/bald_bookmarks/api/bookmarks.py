@@ -22,7 +22,7 @@ from bald_bookmarks.services.url_metadata import (
 router = APIRouter(prefix="/api/bookmarks", tags=["bookmarks"])
 
 
-@router.get("", response_model=list[Bookmark])
+@router.get("")
 def list_bookmarks(
     driver: DriverDep,
     folder_id: int | None = Query(default=None),
@@ -50,7 +50,7 @@ def list_bookmarks(
     )
 
 
-@router.post("/url-preview", response_model=UrlMetadataResponse)
+@router.post("/url-preview")
 def preview_bookmark_url(payload: UrlMetadataRequest) -> UrlMetadataResponse:
     """Fetch page title and description for a bookmark URL.
 
@@ -61,6 +61,9 @@ def preview_bookmark_url(payload: UrlMetadataRequest) -> UrlMetadataResponse:
 
     Returns:
         UrlMetadataResponse: Extracted metadata for the page.
+
+    Raises:
+        HTTPException: If fetching URL metadata fails.
     """
     try:
         return fetch_url_metadata(payload.url)
@@ -71,7 +74,7 @@ def preview_bookmark_url(payload: UrlMetadataRequest) -> UrlMetadataResponse:
         ) from exc
 
 
-@router.get("/{bookmark_id}", response_model=Bookmark)
+@router.get("/{bookmark_id}")
 def get_bookmark(bookmark_id: int, driver: DriverDep) -> Bookmark:
     """Fetch a bookmark.
 
@@ -81,6 +84,9 @@ def get_bookmark(bookmark_id: int, driver: DriverDep) -> Bookmark:
 
     Returns:
         Bookmark: Matching bookmark.
+
+    Raises:
+        HTTPException: If the bookmark is not found.
     """
     try:
         return driver.get_bookmark(bookmark_id)
@@ -90,7 +96,7 @@ def get_bookmark(bookmark_id: int, driver: DriverDep) -> Bookmark:
         ) from exc
 
 
-@router.post("", response_model=Bookmark, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def create_bookmark(
     payload: BookmarkCreate,
     driver: DriverDep,
@@ -105,6 +111,9 @@ def create_bookmark(
 
     Returns:
         Bookmark: Created bookmark.
+
+    Raises:
+        HTTPException: If the specified folder is not found.
     """
     try:
         bookmark = driver.create_bookmark(payload)
@@ -116,7 +125,7 @@ def create_bookmark(
     return bookmark
 
 
-@router.patch("/{bookmark_id}", response_model=Bookmark)
+@router.patch("/{bookmark_id}")
 def update_bookmark(
     bookmark_id: int,
     payload: BookmarkUpdate,
@@ -133,6 +142,9 @@ def update_bookmark(
 
     Returns:
         Bookmark: Updated bookmark.
+
+    Raises:
+        HTTPException: If the bookmark or folder is not found.
     """
     try:
         current = driver.get_bookmark(bookmark_id)
@@ -163,6 +175,9 @@ def delete_bookmark(bookmark_id: int, driver: DriverDep) -> None:
     Args:
         bookmark_id (int): Bookmark primary key.
         driver (DriverDep): Database driver.
+
+    Raises:
+        HTTPException: If the bookmark is not found.
     """
     try:
         driver.delete_bookmark(bookmark_id)
@@ -172,7 +187,7 @@ def delete_bookmark(bookmark_id: int, driver: DriverDep) -> None:
         ) from exc
 
 
-@router.post("/{bookmark_id}/thumbnail/refresh", response_model=Bookmark)
+@router.post("/{bookmark_id}/thumbnail/refresh")
 def refresh_thumbnail(
     bookmark_id: int,
     driver: DriverDep,
@@ -187,6 +202,9 @@ def refresh_thumbnail(
 
     Returns:
         Bookmark: Bookmark with pending thumbnail status.
+
+    Raises:
+        HTTPException: If the bookmark is not found.
     """
     try:
         driver.get_bookmark(bookmark_id)

@@ -9,7 +9,7 @@ from bald_bookmarks.domain.jobs import Job
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
 
-@router.get("", response_model=list[Job])
+@router.get("")
 def list_jobs(
     driver: DriverDep,
     limit: int = Query(default=100, ge=1, le=500),
@@ -26,7 +26,7 @@ def list_jobs(
     return driver.list_jobs(limit=limit)
 
 
-@router.get("/{job_id}", response_model=Job)
+@router.get("/{job_id}")
 def get_job(job_id: int, driver: DriverDep) -> Job:
     """Fetch a background job.
 
@@ -36,6 +36,9 @@ def get_job(job_id: int, driver: DriverDep) -> Job:
 
     Returns:
         Job: Matching job.
+
+    Raises:
+        HTTPException: If the job is not found.
     """
     try:
         return driver.get_job(job_id)

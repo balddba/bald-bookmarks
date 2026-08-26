@@ -1,17 +1,25 @@
-"""API tests using the in-memory DatabaseDriver."""
+"""API tests using the SQLite DatabaseDriver."""
 
 from fastapi.testclient import TestClient
 
 
 def test_health(client: TestClient) -> None:
-    """Health endpoint returns ok."""
+    """Health endpoint returns ok.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
 def test_folder_tree_and_nested_create(client: TestClient) -> None:
-    """Folders nest and appear in the tree endpoint."""
+    """Folders nest and appear in the tree endpoint.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     root = client.post("/api/folders", json={"name": "Work"}).json()
     child = client.post(
         "/api/folders",
@@ -26,7 +34,11 @@ def test_folder_tree_and_nested_create(client: TestClient) -> None:
 
 
 def test_folder_tree_includes_bookmark_counts(client: TestClient) -> None:
-    """Folder tree reports direct bookmark counts per folder."""
+    """Folder tree reports direct bookmark counts per folder.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     root = client.post("/api/folders", json={"name": "Work"}).json()
     child = client.post(
         "/api/folders",
@@ -54,7 +66,11 @@ def test_folder_tree_includes_bookmark_counts(client: TestClient) -> None:
 
 
 def test_folder_move_cycle_rejected(client: TestClient) -> None:
-    """Moving a folder under its descendant is rejected."""
+    """Moving a folder under its descendant is rejected.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     root = client.post("/api/folders", json={"name": "A"}).json()
     child = client.post(
         "/api/folders",
@@ -68,7 +84,11 @@ def test_folder_move_cycle_rejected(client: TestClient) -> None:
 
 
 def test_folder_delete_requires_recursive(client: TestClient) -> None:
-    """Non-empty folder delete conflicts without recursive=true."""
+    """Non-empty folder delete conflicts without recursive=true.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     root = client.post("/api/folders", json={"name": "Keep"}).json()
     client.post("/api/folders", json={"name": "Child", "parent_id": root["id"]})
     conflict = client.delete(f"/api/folders/{root['id']}")
@@ -80,7 +100,11 @@ def test_folder_delete_requires_recursive(client: TestClient) -> None:
 def test_folder_recursive_delete_removes_nested_bookmarks(
     client: TestClient,
 ) -> None:
-    """Recursive folder delete removes nested folders and their bookmarks."""
+    """Recursive folder delete removes nested folders and their bookmarks.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     root = client.post("/api/folders", json={"name": "Work"}).json()
     child = client.post(
         "/api/folders",
@@ -111,7 +135,11 @@ def test_folder_recursive_delete_removes_nested_bookmarks(
 
 
 def test_bookmark_crud_tags_and_thumbnail_job(client: TestClient) -> None:
-    """Bookmarks support tags and enqueue thumbnail jobs."""
+    """Bookmarks support tags and enqueue thumbnail jobs.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     folder = client.post("/api/folders", json={"name": "Reading"}).json()
     created = client.post(
         "/api/bookmarks",
@@ -150,7 +178,11 @@ def test_bookmark_crud_tags_and_thumbnail_job(client: TestClient) -> None:
 
 
 def test_bookmark_description_rejects_over_max_length(client: TestClient) -> None:
-    """Bookmark descriptions longer than VARCHAR2(256) are rejected."""
+    """Bookmark descriptions longer than VARCHAR2(256) are rejected.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     too_long = "x" * 257
     created = client.post(
         "/api/bookmarks",
@@ -174,7 +206,11 @@ def test_bookmark_description_rejects_over_max_length(client: TestClient) -> Non
 
 
 def test_tag_create_conflict_and_list(client: TestClient) -> None:
-    """Duplicate tags conflict and listing returns created tags."""
+    """Duplicate tags conflict and listing returns created tags.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     first = client.post("/api/tags", json={"name": "Rust"})
     assert first.status_code == 201
     conflict = client.post("/api/tags", json={"name": " rust "})
@@ -184,7 +220,11 @@ def test_tag_create_conflict_and_list(client: TestClient) -> None:
 
 
 def test_bookmark_search_and_tag_filter(client: TestClient) -> None:
-    """Search and tag filters narrow bookmark lists."""
+    """Search and tag filters narrow bookmark lists.
+
+    Args:
+        client (TestClient): Test client instance.
+    """
     client.post(
         "/api/bookmarks",
         json={

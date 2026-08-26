@@ -1,0 +1,19 @@
+# SQLite has no database server. This placeholder lets tests start a compose
+# stack the same way as the other engines. Application data still lives in a
+# file (see SQLITE_PATH). For the full app stack, use docker-compose.yml.
+name: bald-bookmarks-sqlite-test
+
+services:
+  sqlite-fs:
+    image: alpine:3.21
+    command: ["sleep", "infinity"]
+    volumes:
+      - sqlite_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 1s
+      timeout: 1s
+      retries: 3
+
+volumes:
+  sqlite_data:

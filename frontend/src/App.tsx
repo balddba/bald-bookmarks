@@ -325,9 +325,7 @@ export default function App() {
     <div className="app-shell">
       <aside className="app-sidebar">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            BB
-          </div>
+          <img src="/logo.png" alt="Bald Bookmarks Logo" className="brand-logo" />
           <div className="brand-text">
             <p className="brand-name">Bald Bookmarks</p>
             <p className="brand-sub">Personal library</p>

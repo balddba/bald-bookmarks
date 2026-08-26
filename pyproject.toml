@@ -1,6 +1,6 @@
 [project]
 name = "bald-bookmarks"
-version = "0.1.0"
+version = "0.2.0"
 description = "Single-user bookmark manager with nested folders, tags, and thumbnail jobs"
 requires-python = ">=3.13"
 dependencies = [
@@ -13,6 +13,8 @@ dependencies = [
     "alembic>=1.14.0",
     "loguru>=0.7.0",
     "playwright>=1.62.0",
+    "psycopg[binary,pool]>=3.3.4",
+    "mysql-connector-python>=26.7.0",
 ]
 
 [project.optional-dependencies]
@@ -31,11 +33,14 @@ packages = ["backend/bald_bookmarks"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["backend"]
+pythonpath = ["backend", "."]
+markers = [
+    "functional: live tests that start docker compose databases",
+]
 
 [tool.ruff]
 target-version = "py313"
-src = ["backend", "tests"]
+src = ["backend", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]

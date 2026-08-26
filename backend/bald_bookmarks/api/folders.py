@@ -14,7 +14,7 @@ from bald_bookmarks.domain.folders import (
 router = APIRouter(prefix="/api/folders", tags=["folders"])
 
 
-@router.get("/tree", response_model=list[FolderTreeNode])
+@router.get("/tree")
 def get_folder_tree(driver: DriverDep) -> list[FolderTreeNode]:
     """Return the nested folder hierarchy.
 
@@ -27,7 +27,7 @@ def get_folder_tree(driver: DriverDep) -> list[FolderTreeNode]:
     return driver.get_folder_tree()
 
 
-@router.get("/{folder_id}", response_model=Folder)
+@router.get("/{folder_id}")
 def get_folder(folder_id: int, driver: DriverDep) -> Folder:
     """Fetch a single folder.
 
@@ -37,6 +37,9 @@ def get_folder(folder_id: int, driver: DriverDep) -> Folder:
 
     Returns:
         Folder: Matching folder.
+
+    Raises:
+        HTTPException: If the folder is not found.
     """
     try:
         return driver.get_folder(folder_id)
@@ -46,7 +49,7 @@ def get_folder(folder_id: int, driver: DriverDep) -> Folder:
         ) from exc
 
 
-@router.get("/{folder_id}/children", response_model=list[Folder])
+@router.get("/{folder_id}/children")
 def list_children(folder_id: int, driver: DriverDep) -> list[Folder]:
     """List direct children of a folder.
 
@@ -56,6 +59,9 @@ def list_children(folder_id: int, driver: DriverDep) -> list[Folder]:
 
     Returns:
         list[Folder]: Child folders.
+
+    Raises:
+        HTTPException: If the parent folder is not found.
     """
     try:
         driver.get_folder(folder_id)
@@ -66,7 +72,7 @@ def list_children(folder_id: int, driver: DriverDep) -> list[Folder]:
     return driver.list_folder_children(folder_id)
 
 
-@router.get("", response_model=list[Folder])
+@router.get("")
 def list_root_folders(driver: DriverDep) -> list[Folder]:
     """List root folders.
 
@@ -79,7 +85,7 @@ def list_root_folders(driver: DriverDep) -> list[Folder]:
     return driver.list_folder_children(None)
 
 
-@router.post("", response_model=Folder, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def create_folder(payload: FolderCreate, driver: DriverDep) -> Folder:
     """Create a folder.
 
@@ -89,6 +95,9 @@ def create_folder(payload: FolderCreate, driver: DriverDep) -> Folder:
 
     Returns:
         Folder: Created folder.
+
+    Raises:
+        HTTPException: If the specified parent folder is not found.
     """
     try:
         return driver.create_folder(payload)
@@ -98,7 +107,7 @@ def create_folder(payload: FolderCreate, driver: DriverDep) -> Folder:
         ) from exc
 
 
-@router.patch("/{folder_id}", response_model=Folder)
+@router.patch("/{folder_id}")
 def update_folder(
     folder_id: int,
     payload: FolderUpdate,
@@ -113,6 +122,9 @@ def update_folder(
 
     Returns:
         Folder: Updated folder.
+
+    Raises:
+        HTTPException: If folder is not found or move creates a cycle.
     """
     try:
         return driver.update_folder(folder_id, payload)
@@ -138,6 +150,9 @@ def delete_folder(
         folder_id (int): Folder primary key.
         driver (DriverDep): Database driver.
         recursive (bool): Delete descendants and bookmarks when True.
+
+    Raises:
+        HTTPException: If folder is not found or has contents without recursive=True.
     """
     try:
         driver.delete_folder(folder_id, recursive=recursive)

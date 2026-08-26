@@ -9,10 +9,21 @@ class AdminConfig(BaseModel):
     """Sanitized runtime configuration (secrets omitted).
 
     Attributes:
-        db_driver (str): Database driver name (oracle or memory).
+        db_driver (str): Database driver name (oracle, postgres, mysql, or sqlite).
         oracle_user (str | None): Oracle username when configured.
         oracle_dsn (str | None): Oracle Easy Connect or TNS DSN.
-        oracle_password_set (bool): True when a password is present.
+        oracle_password_set (bool): True when an Oracle password is present.
+        postgres_host (str | None): PostgreSQL hostname when configured.
+        postgres_port (int | None): PostgreSQL port when configured.
+        postgres_user (str | None): PostgreSQL username when configured.
+        postgres_database (str | None): PostgreSQL database name when configured.
+        postgres_password_set (bool): True when a PostgreSQL password is present.
+        mysql_host (str | None): MySQL hostname when configured.
+        mysql_port (int | None): MySQL port when configured.
+        mysql_user (str | None): MySQL username when configured.
+        mysql_database (str | None): MySQL database name when configured.
+        mysql_password_set (bool): True when a MySQL password is present.
+        sqlite_path (str): Filesystem path to the SQLite database file.
         job_poll_seconds (float): Seconds between job poll cycles.
         job_max_attempts (int): Max attempts before a job is failed.
         media_root (str): Root directory for thumbnail media files.
@@ -30,6 +41,17 @@ class AdminConfig(BaseModel):
     oracle_user: str | None
     oracle_dsn: str | None
     oracle_password_set: bool
+    postgres_host: str | None
+    postgres_port: int | None
+    postgres_user: str | None
+    postgres_database: str | None
+    postgres_password_set: bool
+    mysql_host: str | None
+    mysql_port: int | None
+    mysql_user: str | None
+    mysql_database: str | None
+    mysql_password_set: bool
+    sqlite_path: str
     job_poll_seconds: float
     job_max_attempts: int
     media_root: str
@@ -61,7 +83,7 @@ class SchemaStatus(BaseModel):
     """Deployed Alembic revision compared with local heads.
 
     Attributes:
-        applicable (bool): True when the Oracle driver applies migrations.
+        applicable (bool): True when the selected driver applies Alembic migrations.
         current_revision (str | None): Revision stored in alembic_version.
         head_revisions (list[str]): Head revision ids from local scripts.
         is_current (bool | None): True when current matches a local head.

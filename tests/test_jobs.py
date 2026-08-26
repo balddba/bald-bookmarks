@@ -1,4 +1,4 @@
-"""Unit tests for MemoryDriver and thumbnail job handling."""
+"""Unit tests for SQLiteDriver CRUD and thumbnail job handling."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -7,7 +7,7 @@ import pytest
 
 from bald_bookmarks.config import Settings
 from bald_bookmarks.db.exceptions import ConflictError, NotFoundError, ValidationError
-from bald_bookmarks.db.memory import MemoryDriver
+from bald_bookmarks.db.sqlite.driver import SQLiteDriver
 from bald_bookmarks.domain.bookmarks import BookmarkCreate
 from bald_bookmarks.domain.folders import FolderCreate, FolderUpdate
 from bald_bookmarks.domain.jobs import JobEnqueue, ThumbnailCapturePayload
@@ -18,31 +18,26 @@ from bald_bookmarks.jobs.scheduler import JobScheduler
 from bald_bookmarks.services.page_preview import PagePreviewError
 
 
-@pytest.fixture
-def driver() -> MemoryDriver:
-    """Provide a connected memory driver.
+def test_folder_cycle_validation(driver: SQLiteDriver) -> None:
+    """Reject moves that would create a folder cycle.
 
-    Yields:
-        MemoryDriver: Connected in-memory driver.
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
     """
-    memory = MemoryDriver()
-    memory.connect()
-    yield memory
-    memory.close()
-
-
-def test_memory_folder_cycle_validation(driver: MemoryDriver) -> None:
-    """Reject moves that would create a folder cycle."""
     root = driver.create_folder(FolderCreate(name="Root"))
     child = driver.create_folder(FolderCreate(name="Child", parent_id=root.id))
     with pytest.raises(ValidationError):
         driver.update_folder(root.id, FolderUpdate(parent_id=child.id))
 
 
-def test_memory_recursive_folder_delete_removes_nested_contents(
-    driver: MemoryDriver,
+def test_recursive_folder_delete_removes_nested_contents(
+    driver: SQLiteDriver,
 ) -> None:
-    """Recursive delete removes descendant folders and bookmarks."""
+    """Recursive delete removes descendant folders and bookmarks.
+
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
+    """
     root = driver.create_folder(FolderCreate(name="Root"))
     child = driver.create_folder(FolderCreate(name="Child", parent_id=root.id))
     driver.create_bookmark(
@@ -64,15 +59,23 @@ def test_memory_recursive_folder_delete_removes_nested_contents(
     assert driver.list_bookmarks() == []
 
 
-def test_memory_tag_conflict(driver: MemoryDriver) -> None:
-    """Creating a duplicate tag raises ConflictError."""
+def test_tag_conflict(driver: SQLiteDriver) -> None:
+    """Creating a duplicate tag raises ConflictError.
+
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
+    """
     driver.create_tag(TagCreate(name="Ops"))
     with pytest.raises(ConflictError):
         driver.create_tag(TagCreate(name="ops"))
 
 
-def test_memory_missing_entities(driver: MemoryDriver) -> None:
-    """Missing entity lookups raise NotFoundError."""
+def test_missing_entities(driver: SQLiteDriver) -> None:
+    """Missing entity lookups raise NotFoundError.
+
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
+    """
     with pytest.raises(NotFoundError):
         driver.get_folder(999)
     with pytest.raises(NotFoundError):
@@ -82,14 +85,23 @@ def test_memory_missing_entities(driver: MemoryDriver) -> None:
 
 
 def test_thumbnail_handler_writes_preview(
-    driver: MemoryDriver,
+    driver: SQLiteDriver,
     tmp_path: Path,
 ) -> None:
-    """Thumbnail handler writes a PNG and marks the bookmark ready."""
+    """Thumbnail handler writes a PNG and marks the bookmark ready.
+
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
+        tmp_path (Path): Pytest temporary directory.
+    """
     bookmark = driver.create_bookmark(
         BookmarkCreate(title="Site", url="https://example.com")
     )
-    settings = Settings(db_driver="memory", media_root=tmp_path / "media")
+    settings = Settings(
+        db_driver="sqlite",
+        sqlite_path=tmp_path / "bookmarks.db",
+        media_root=tmp_path / "media",
+    )
     job = driver.enqueue_job(
         JobEnqueue(
             job_type="thumbnail.capture",
@@ -136,14 +148,23 @@ def test_thumbnail_handler_writes_preview(
 
 
 def test_thumbnail_handler_marks_failed_on_error(
-    driver: MemoryDriver,
+    driver: SQLiteDriver,
     tmp_path: Path,
 ) -> None:
-    """Capture failures mark the bookmark thumbnail as failed."""
+    """Capture failures mark the bookmark thumbnail as failed.
+
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
+        tmp_path (Path): Pytest temporary directory.
+    """
     bookmark = driver.create_bookmark(
         BookmarkCreate(title="Broken", url="https://example.com/missing")
     )
-    settings = Settings(db_driver="memory", media_root=tmp_path / "media")
+    settings = Settings(
+        db_driver="sqlite",
+        sqlite_path=tmp_path / "bookmarks.db",
+        media_root=tmp_path / "media",
+    )
     driver.enqueue_job(
         JobEnqueue(
             job_type="thumbnail.capture",
@@ -168,12 +189,18 @@ def test_thumbnail_handler_marks_failed_on_error(
 
 
 def test_scheduler_processes_thumbnail_job(
-    driver: MemoryDriver,
+    driver: SQLiteDriver,
     tmp_path: Path,
 ) -> None:
-    """Scheduler claims and completes a thumbnail job."""
+    """Scheduler claims and completes a thumbnail job.
+
+    Args:
+        driver (SQLiteDriver): SQLite driver fixture.
+        tmp_path (Path): Pytest temporary directory.
+    """
     settings = Settings(
-        db_driver="memory",
+        db_driver="sqlite",
+        sqlite_path=tmp_path / "bookmarks.db",
         media_root=tmp_path / "media",
         job_poll_seconds=0.01,
     )
