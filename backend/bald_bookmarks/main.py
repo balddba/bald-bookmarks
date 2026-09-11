@@ -16,6 +16,7 @@ from bald_bookmarks.db.factory import create_driver
 from bald_bookmarks.db.migrate import upgrade_schema
 from bald_bookmarks.jobs.registry import build_default_registry
 from bald_bookmarks.jobs.scheduler import JobScheduler
+from bald_bookmarks.sentry import init_sentry
 
 
 @asynccontextmanager
@@ -54,6 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         FastAPI: Configured application.
     """
     resolved = settings or get_settings()
+    init_sentry(resolved)
     driver = create_driver(resolved)
     registry = build_default_registry()
     scheduler = JobScheduler(driver, registry, resolved)

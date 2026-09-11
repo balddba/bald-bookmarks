@@ -36,6 +36,9 @@ class Settings(BaseSettings):
         thumbnail_viewport_height (int): Screenshot viewport height in pixels.
         thumbnail_timeout_ms (int): Page navigation timeout for previews.
         thumbnail_no_sandbox (bool): Launch Chromium without the sandbox.
+        sentry_dsn (str): Sentry DSN; empty disables the SDK.
+        sentry_environment (str): Sentry environment tag.
+        sentry_traces_sample_rate (float): Trace sample rate without a parent decision.
     """
 
     model_config = SettingsConfigDict(
@@ -94,6 +97,20 @@ class Settings(BaseSettings):
     thumbnail_no_sandbox: bool = Field(
         default=False,
         alias="THUMBNAIL_NO_SANDBOX",
+    )
+    sentry_dsn: str = Field(
+        default="https://6b872382a877bb3b6bf585bb238ed6c7@sentry.aaronslab.net/3",
+        alias="SENTRY_DSN",
+    )
+    sentry_environment: str = Field(
+        default="development",
+        alias="SENTRY_ENVIRONMENT",
+    )
+    sentry_traces_sample_rate: float = Field(
+        default=1.0,
+        alias="SENTRY_TRACES_SAMPLE_RATE",
+        ge=0.0,
+        le=1.0,
     )
 
     @field_validator("cors_origins", mode="before")

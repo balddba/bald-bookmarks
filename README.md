@@ -29,6 +29,22 @@
 
 ---
 
+## Screenshots
+
+### Bookmarks & Folder Hierarchy
+![Main Bookmarks Dashboard](docs/screenshots/main-dashboard.png)
+
+### Folder Navigation & Filtered View
+![Folder View](docs/screenshots/folder-view.png)
+
+### Integrated Admin Console & Background Jobs
+![Admin Console - Jobs Scheduler](docs/screenshots/admin-jobs.png)
+
+### Runtime Configuration & Database Health
+![Admin Console - Configuration](docs/screenshots/admin-configuration.png)
+
+---
+
 ## Quickstart with Docker
 
 ### Standard Stack
@@ -120,6 +136,9 @@ Key settings configurable via environment variables or `.env`:
 | `MEDIA_ROOT` | `backend/bald_bookmarks/media` | Directory where captured thumbnail images are stored |
 | `THUMBNAIL_VIEWPORT_WIDTH` / `HEIGHT` | `1280` / `720` | Playwright viewport dimensions for thumbnails |
 | `THUMBNAIL_NO_SANDBOX` | `false` (`true` in Docker) | Disable Playwright Chromium sandbox if needed |
+| `SENTRY_DSN` | FastAPI project DSN | Empty string disables Sentry on the API |
+| `SENTRY_ENVIRONMENT` | `development` | Sentry environment tag |
+| `SENTRY_TRACES_SAMPLE_RATE` | `1.0` | Fraction of API transactions to trace |
 
 ---
 
