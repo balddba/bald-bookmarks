@@ -1,4 +1,5 @@
 .env
+.env.dockhand
 .venv/
 __pycache__/
 *.py[cod]

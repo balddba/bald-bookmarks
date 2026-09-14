@@ -7,6 +7,31 @@ import pytest
 from bald_bookmarks.config import Settings
 
 
+def test_sentry_dsn_defaults_empty() -> None:
+    """Sentry stays disabled unless SENTRY_DSN is provided."""
+    settings = Settings(db_driver="sqlite", _env_file=None)
+    assert settings.sentry_dsn == ""
+    assert settings.vite_sentry_dsn == ""
+
+
+def test_shared_env_accepts_browser_sentry_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """VITE_ Sentry keys in the shared env file are valid Settings fields.
+
+    Args:
+        monkeypatch (pytest.MonkeyPatch): Pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("DB_DRIVER", "sqlite")
+    monkeypatch.setenv("VITE_SENTRY_DSN", "https://key@sentry.example/2")
+    monkeypatch.setenv("VITE_SENTRY_ENVIRONMENT", "production")
+    monkeypatch.setenv("VITE_SENTRY_TRACES_SAMPLE_RATE", "0.2")
+    settings = Settings(_env_file=None)
+    assert settings.vite_sentry_dsn == "https://key@sentry.example/2"
+    assert settings.vite_sentry_environment == "production"
+    assert settings.vite_sentry_traces_sample_rate == "0.2"
+
+
 def test_cors_origins_comma_separated(monkeypatch: pytest.MonkeyPatch) -> None:
     """Comma-separated CORS_ORIGINS env values parse into a list.
 

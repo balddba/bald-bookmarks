@@ -60,6 +60,8 @@ def init_sentry(settings: Settings) -> None:
         dsn=dsn,
         environment=settings.sentry_environment,
         release=f"bald-bookmarks@{__version__}",
+        # Add data like request headers and IP for users; see
+        # https://docs.sentry.io/platforms/python/data-management/data-collected/
         send_default_pii=True,
         traces_sampler=traces_sampler,
     )

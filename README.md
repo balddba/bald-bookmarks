@@ -68,6 +68,10 @@ docker compose -f docker-compose.demo.yaml up --build
 - **API Direct**: [http://localhost:8081](http://localhost:8081) (or `http://localhost:8000` when running locally)
 - **Interactive API Docs (Swagger)**: [http://localhost:8081/docs](http://localhost:8081/docs)
 
+### Dockhand
+
+Point a Git stack at `docker-compose.prod.yml` (or `docker-compose.yml`). Copy keys from `.env.example` into the stack environment panel and mark `SENTRY_DSN`, `VITE_SENTRY_DSN`, and database passwords as secrets. Compose interpolates those values into both services at deploy time; the browser SDK reads them when the web container starts, so changing Sentry settings only requires a recreate.
+
 ---
 
 ## Local Development Setup
@@ -136,9 +140,12 @@ Key settings configurable via environment variables or `.env`:
 | `MEDIA_ROOT` | `backend/bald_bookmarks/media` | Directory where captured thumbnail images are stored |
 | `THUMBNAIL_VIEWPORT_WIDTH` / `HEIGHT` | `1280` / `720` | Playwright viewport dimensions for thumbnails |
 | `THUMBNAIL_NO_SANDBOX` | `false` (`true` in Docker) | Disable Playwright Chromium sandbox if needed |
-| `SENTRY_DSN` | FastAPI project DSN | Empty string disables Sentry on the API |
-| `SENTRY_ENVIRONMENT` | `development` | Sentry environment tag |
+| `SENTRY_DSN` | unset | API Sentry DSN; unset or empty disables the SDK |
+| `VITE_SENTRY_DSN` | unset | Browser Sentry DSN; unset or empty disables the React SDK |
+| `SENTRY_ENVIRONMENT` | `development` | Sentry environment tag for the API |
+| `VITE_SENTRY_ENVIRONMENT` | Vite `MODE` | Sentry environment tag for the browser SDK |
 | `SENTRY_TRACES_SAMPLE_RATE` | `1.0` | Fraction of API transactions to trace |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE` | `1.0` (dev) / `0.2` (prod) | Fraction of browser transactions to trace |
 
 ---
 

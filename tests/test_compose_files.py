@@ -11,6 +11,7 @@ COMPOSE_DIR = REPO_ROOT / "compose"
 EXAMPLE_FILES = [
     REPO_ROOT / ".env.example",
     REPO_ROOT / "docker-compose.yml",
+    REPO_ROOT / "docker-compose.prod.yml",
     REPO_ROOT / "docker-compose.demo.yaml",
     *sorted(COMPOSE_DIR.glob("*.yml")),
 ]
@@ -29,6 +30,29 @@ def test_example_files_do_not_contain_live_secrets() -> None:
         text = path.read_text(encoding="utf-8").lower()
         for needle in FORBIDDEN_SUBSTRINGS:
             assert needle not in text, f"{path.name} contains forbidden value {needle}"
+
+
+def test_env_example_documents_frontend_and_backend_sentry() -> None:
+    """`.env.example` lists uncommented Sentry keys for both services."""
+    text = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
+    assert "\nSENTRY_DSN=\n" in text
+    assert "\nVITE_SENTRY_DSN=\n" in text
+    assert "\nSENTRY_ENVIRONMENT=" in text
+    assert "\nVITE_SENTRY_ENVIRONMENT=" in text
+
+
+def test_compose_interpolates_sentry_into_api_and_web() -> None:
+    """Compose files pass Sentry settings into API runtime and web runtime."""
+    compose_files = (
+        REPO_ROOT / "docker-compose.yml",
+        REPO_ROOT / "docker-compose.prod.yml",
+        REPO_ROOT / "docker-compose.demo.yaml",
+    )
+    for path in compose_files:
+        text = path.read_text(encoding="utf-8")
+        assert "SENTRY_DSN: ${SENTRY_DSN:-}" in text, path.name
+        assert "VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}" in text, path.name
+        assert "args:" not in text.split("web:")[1], path.name
 
 
 def test_env_example_uses_placeholder_credentials() -> None:

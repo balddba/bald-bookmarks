@@ -39,6 +39,9 @@ class Settings(BaseSettings):
         sentry_dsn (str): Sentry DSN; empty disables the SDK.
         sentry_environment (str): Sentry environment tag.
         sentry_traces_sample_rate (float): Trace sample rate without a parent decision.
+        vite_sentry_dsn (str): Browser Sentry DSN from the shared env file.
+        vite_sentry_environment (str): Browser Sentry environment tag.
+        vite_sentry_traces_sample_rate (str): Browser trace sample rate.
     """
 
     model_config = SettingsConfigDict(
@@ -99,7 +102,7 @@ class Settings(BaseSettings):
         alias="THUMBNAIL_NO_SANDBOX",
     )
     sentry_dsn: str = Field(
-        default="https://6b872382a877bb3b6bf585bb238ed6c7@sentry.aaronslab.net/3",
+        default="",
         alias="SENTRY_DSN",
     )
     sentry_environment: str = Field(
@@ -111,6 +114,18 @@ class Settings(BaseSettings):
         alias="SENTRY_TRACES_SAMPLE_RATE",
         ge=0.0,
         le=1.0,
+    )
+    vite_sentry_dsn: str = Field(
+        default="",
+        alias="VITE_SENTRY_DSN",
+    )
+    vite_sentry_environment: str = Field(
+        default="",
+        alias="VITE_SENTRY_ENVIRONMENT",
+    )
+    vite_sentry_traces_sample_rate: str = Field(
+        default="",
+        alias="VITE_SENTRY_TRACES_SAMPLE_RATE",
     )
 
     @field_validator("cors_origins", mode="before")

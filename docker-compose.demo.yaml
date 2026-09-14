@@ -29,6 +29,9 @@ services:
       THUMBNAIL_VIEWPORT_HEIGHT: ${THUMBNAIL_VIEWPORT_HEIGHT:-720}
       THUMBNAIL_TIMEOUT_MS: ${THUMBNAIL_TIMEOUT_MS:-20000}
       THUMBNAIL_NO_SANDBOX: ${THUMBNAIL_NO_SANDBOX:-true}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-development}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-1.0}
     volumes:
       - media_data:/data/media
       - ./backend/bald_bookmarks/data/demo.db:/app/backend/bald_bookmarks/data/demo.db
@@ -53,6 +56,11 @@ services:
       dockerfile: Dockerfile
     container_name: bald-bookmarks-web
     restart: unless-stopped
+    environment:
+      VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+      VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-}
+      VITE_SENTRY_TRACES_SAMPLE_RATE: ${VITE_SENTRY_TRACES_SAMPLE_RATE:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-}
     depends_on:
       api:
         condition: service_healthy
