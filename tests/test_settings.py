@@ -7,6 +7,12 @@ import pytest
 from bald_bookmarks.config import Settings
 
 
+def test_default_driver_is_sqlite() -> None:
+    """Default settings match the documented local development driver."""
+    settings = Settings(_env_file=None)
+    assert settings.normalized_driver == "sqlite"
+
+
 def test_sentry_dsn_defaults_empty() -> None:
     """Sentry stays disabled unless SENTRY_DSN is provided."""
     settings = Settings(db_driver="sqlite", _env_file=None)

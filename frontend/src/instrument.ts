@@ -1,4 +1,11 @@
+import React from 'react'
 import * as Sentry from '@sentry/react'
+import {
+  createRoutesFromChildren,
+  matchRoutes,
+  useLocation,
+  useNavigationType,
+} from 'react-router'
 
 type SentryEnvName =
   | 'VITE_SENTRY_DSN'
@@ -41,13 +48,20 @@ if (dsn) {
       // httpBodies: []
     },
     integrations: [
-      Sentry.browserTracingIntegration(),
+      Sentry.reactRouterV7BrowserTracingIntegration({
+        useEffect: React.useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes,
+      }),
       Sentry.browserProfilingIntegration(),
     ],
     tracesSampleRate: parseSampleRate(
       readEnvValue('VITE_SENTRY_TRACES_SAMPLE_RATE'),
       import.meta.env.PROD ? 0.2 : 1.0,
     ),
+    tracePropagationTargets: ['localhost', /^\/api\//],
     profileSessionSampleRate: 1.0,
     profileLifecycle: 'trace',
   })

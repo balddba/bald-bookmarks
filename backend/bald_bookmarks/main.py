@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -32,13 +33,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = app.state.settings
     driver = app.state.driver
     scheduler: JobScheduler = app.state.scheduler
-    settings.thumbnails_dir.mkdir(parents=True, exist_ok=True)
-    if settings.normalized_driver == "sqlite":
-        settings.sqlite_db_path().parent.mkdir(parents=True, exist_ok=True)
-    upgrade_schema(settings)
-    driver.connect()
-    await scheduler.start()
-    logger.info("Bald Bookmarks API started db_driver={}", settings.db_driver)
+    try:
+        settings.thumbnails_dir.mkdir(parents=True, exist_ok=True)
+        if settings.normalized_driver == "sqlite":
+            settings.sqlite_db_path().parent.mkdir(parents=True, exist_ok=True)
+        upgrade_schema(settings)
+        driver.connect()
+        await scheduler.start()
+        logger.info("Bald Bookmarks API started db_driver={}", settings.db_driver)
+    except Exception:
+        logger.exception("Bald Bookmarks API startup failed")
+        raise
     try:
         yield
     finally:
@@ -98,7 +103,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 def _build_default_app() -> FastAPI:
-    """Create the module-level app, falling back to SQLite for import/tests.
+    """Create the module-level app.
+
+    A SQLite fallback can be enabled for import-oriented tooling by setting
+    BALD_BOOKMARKS_IMPORT_FALLBACK_SQLITE=true. Normal runtime startup should
+    fail fast when configuration is invalid instead of silently switching
+    databases.
 
     Returns:
         FastAPI: Application instance.
@@ -106,6 +116,12 @@ def _build_default_app() -> FastAPI:
     try:
         return create_app()
     except Exception as exc:  # noqa: BLE001
+        if os.getenv("BALD_BOOKMARKS_IMPORT_FALLBACK_SQLITE", "").lower() not in {
+            "1",
+            "true",
+            "yes",
+        }:
+            raise
         logger.warning("Using SQLite driver fallback during app import: {}", exc)
         return create_app(
             Settings(

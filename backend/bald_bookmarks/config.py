@@ -51,7 +51,7 @@ class Settings(BaseSettings):
         populate_by_name=True,
     )
 
-    db_driver: str = Field(default="oracle", alias="DB_DRIVER")
+    db_driver: str = Field(default="sqlite", alias="DB_DRIVER")
     oracle_user: str | None = Field(default=None, alias="ORACLE_USER")
     oracle_password: str | None = Field(default=None, alias="ORACLE_PASSWORD")
     oracle_dsn: str | None = Field(default=None, alias="ORACLE_DSN")
