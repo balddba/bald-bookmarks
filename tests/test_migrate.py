@@ -85,6 +85,22 @@ def test_upgrade_schema_runs_alembic_for_sqlite(tmp_path: Path) -> None:
     assert (tmp_path / "bookmarks.db").is_file()
 
 
+def test_upgrade_schema_creates_nested_sqlite_dir(tmp_path: Path) -> None:
+    """SQLite migrations create missing parent directories automatically.
+
+    Args:
+        tmp_path (Path): Pytest temporary directory.
+    """
+    db_file = tmp_path / "nested" / "db" / "bookmarks.db"
+    assert not db_file.parent.exists()
+    settings = Settings(
+        db_driver="sqlite",
+        sqlite_path=db_file,
+    )
+    upgrade_schema(settings)
+    assert db_file.is_file()
+
+
 @pytest.mark.parametrize(
     "settings",
     [_oracle_settings(), _postgres_settings(), _mysql_settings(), _sqlite_settings()],

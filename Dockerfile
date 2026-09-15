@@ -31,7 +31,7 @@ RUN apt-get update \
     && playwright install-deps chromium \
     && playwright install chromium \
     && useradd --create-home --uid 10001 appuser \
-    && mkdir -p /data/media/thumbnails \
+    && mkdir -p /data/media/thumbnails /data/db \
     && chown -R appuser:appuser /data /app /ms-playwright \
     && rm -rf /var/lib/apt/lists/*
 

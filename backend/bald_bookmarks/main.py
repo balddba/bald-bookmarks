@@ -33,6 +33,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     driver = app.state.driver
     scheduler: JobScheduler = app.state.scheduler
     settings.thumbnails_dir.mkdir(parents=True, exist_ok=True)
+    if settings.normalized_driver == "sqlite":
+        settings.sqlite_db_path().parent.mkdir(parents=True, exist_ok=True)
     upgrade_schema(settings)
     driver.connect()
     await scheduler.start()

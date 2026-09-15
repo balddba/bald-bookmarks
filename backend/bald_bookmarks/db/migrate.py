@@ -143,6 +143,8 @@ def upgrade_schema(
     """
     if settings.normalized_driver not in SCHEMA_MIGRATION_DRIVERS:
         return
+    if settings.normalized_driver == "sqlite":
+        settings.sqlite_db_path().parent.mkdir(parents=True, exist_ok=True)
     config = alembic_config(alembic_root)
     config.attributes["settings"] = settings
     logger.info("Applying Alembic migrations to head")
