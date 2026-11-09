@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Chip } from '@heroui/react'
 import { api } from './api'
-import type { AdminSnapshot, Job, SchemaStatus } from './types'
+import type { AdminSnapshot, ImportResult, Job, SchemaStatus } from './types'
 
 export const ADMIN_SECTIONS = [
   {
@@ -23,6 +23,11 @@ export const ADMIN_SECTIONS = [
     id: 'jobs',
     title: 'Jobs',
     blurb: 'Scheduler, queued work, and history',
+  },
+  {
+    id: 'backup',
+    title: 'Backup & Restore',
+    blurb: 'Export library backup or restore bookmarks',
   },
 ] as const
 
@@ -112,6 +117,9 @@ function AdminSection({
   }
   if (section === 'schema') {
     return <SchemaSection snapshot={snapshot} />
+  }
+  if (section === 'backup') {
+    return <BackupSection snapshot={snapshot} onReload={onReload} />
   }
   return <JobsSection snapshot={snapshot} onReload={onReload} />
 }
@@ -426,4 +434,212 @@ function JobStatusChip({ status }: { status: string }) {
           ? 'is-warn'
           : ''
   return <span className={`status-chip ${tone}`}>{status}</span>
+}
+
+function BackupSection({
+  snapshot: _snapshot,
+  onReload,
+}: {
+  snapshot: AdminSnapshot
+  onReload: () => Promise<void>
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [skipExisting, setSkipExisting] = useState(true)
+  const [enqueueThumbnails, setEnqueueThumbnails] = useState(true)
+  const [importing, setImporting] = useState(false)
+  const [result, setResult] = useState<ImportResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleImport = async () => {
+    if (!file) return
+    try {
+      setImporting(true)
+      setError(null)
+      setResult(null)
+      const text = await file.text()
+      const res = await api.importBookmarks(text, {
+        skip_existing: skipExisting,
+        enqueue_thumbnails: enqueueThumbnails,
+      })
+      setResult(res)
+      await onReload()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  return (
+    <div className="admin-stack">
+      <section className="panel admin-card">
+        <header className="admin-card-header">
+          <h2>Export library backup</h2>
+          <Chip size="sm">Format options</Chip>
+        </header>
+        <div className="admin-job-actions">
+          <div className="admin-job-action">
+            <div className="admin-job-action-copy">
+              <h3>JSON Backup (Full fidelity)</h3>
+              <p>
+                Complete backup file containing all bookmarks, nested folders,
+                sort orders, descriptions, and tag links.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => {
+                window.location.href = api.exportBookmarkUrl('json')
+              }}
+            >
+              Export JSON
+            </Button>
+          </div>
+          <div className="admin-job-action">
+            <div className="admin-job-action-copy">
+              <h3>Netscape Bookmark HTML (Browser standard)</h3>
+              <p>
+                Universal HTML format compatible with Google Chrome, Mozilla
+                Firefox, Apple Safari, and external bookmark managers.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => {
+                window.location.href = api.exportBookmarkUrl('html')
+              }}
+            >
+              Export HTML
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel admin-card">
+        <header className="admin-card-header">
+          <h2>Restore or import bookmarks</h2>
+          <Chip size="sm">JSON or HTML</Chip>
+        </header>
+        <div style={{ padding: '0.85rem' }}>
+          <div className="field">
+            <span>Choose backup file (.json, .html)</span>
+            <input
+              type="file"
+              accept=".json,.html,.htm"
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null)
+                setResult(null)
+                setError(null)
+              }}
+              style={{
+                color: 'var(--bb-ink)',
+                fontSize: '0.8125rem',
+                padding: '0.4rem 0',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gap: '0.4rem', margin: '0.75rem 0' }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8125rem',
+                color: 'var(--bb-ink)',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={skipExisting}
+                onChange={(e) => setSkipExisting(e.target.checked)}
+              />
+              Skip existing bookmark URLs (prevent duplicates)
+            </label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8125rem',
+                color: 'var(--bb-ink)',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={enqueueThumbnails}
+                onChange={(e) => setEnqueueThumbnails(e.target.checked)}
+              />
+              Queue thumbnail preview generation for imported bookmarks
+            </label>
+          </div>
+
+          <div style={{ marginTop: '0.85rem' }}>
+            <Button
+              onPress={() => void handleImport()}
+              isDisabled={!file || importing}
+            >
+              {importing ? 'Importing…' : 'Restore bookmarks'}
+            </Button>
+          </div>
+
+          {error ? (
+            <div className="error-banner" style={{ marginTop: '0.85rem' }}>
+              {error}
+            </div>
+          ) : null}
+
+          {result ? (
+            <div
+              style={{
+                marginTop: '0.85rem',
+                padding: '0.75rem',
+                background: 'var(--bb-elevated)',
+                borderRadius: '0.375rem',
+                fontSize: '0.8125rem',
+              }}
+            >
+              <p
+                style={{
+                  margin: '0 0 0.35rem',
+                  fontWeight: 600,
+                  color: '#86efac',
+                }}
+              >
+                Import successful
+              </p>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: '1.2rem',
+                  color: 'var(--bb-ink)',
+                }}
+              >
+                <li>Bookmarks imported: {result.bookmarks_created}</li>
+                <li>Folders created: {result.folders_created}</li>
+                <li>
+                  Bookmarks skipped (already present): {result.bookmarks_skipped}
+                </li>
+                <li>Tags created: {result.tags_created}</li>
+              </ul>
+              {result.errors.length > 0 ? (
+                <div style={{ marginTop: '0.5rem', color: 'var(--bb-faint)' }}>
+                  <p style={{ margin: '0.25rem 0' }}>Warnings:</p>
+                  <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                    {result.errors.map((msg, i) => (
+                      <li key={i}>{msg}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </section>
+    </div>
+  )
 }

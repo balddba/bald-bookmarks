@@ -62,6 +62,7 @@ if (dsn) {
       import.meta.env.PROD ? 0.2 : 1.0,
     ),
     tracePropagationTargets: ['localhost', /^\/api\//],
+    enableLogs: true,
     profileSessionSampleRate: 1.0,
     profileLifecycle: 'trace',
   })

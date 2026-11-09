@@ -97,10 +97,10 @@ def test_init_sentry_skips_under_pytest(monkeypatch: pytest.MonkeyPatch) -> None
     assert called == []
 
 
-def test_init_sentry_enables_errors_and_tracing(
+def test_init_sentry_enables_errors_tracing_and_logs(
     monkeypatch: pytest.MonkeyPatch, enable_sentry_init: None
 ) -> None:
-    """SDK init uses the FastAPI DSN, PII flag, and a traces sampler.
+    """SDK init uses the FastAPI DSN, PII flag, logs, and a traces sampler.
 
     Args:
         monkeypatch (pytest.MonkeyPatch): Pytest monkeypatch fixture.
@@ -116,6 +116,7 @@ def test_init_sentry_enables_errors_and_tracing(
     init_sentry(settings)
     assert captured["dsn"] == settings.sentry_dsn
     assert captured["send_default_pii"] is True
+    assert captured["enable_logs"] is True
     assert captured["environment"] == "test"
     assert captured["release"] == "bald-bookmarks@0.2.0"
     sampler = captured["traces_sampler"]

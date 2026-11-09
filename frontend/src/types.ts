@@ -125,3 +125,13 @@ export interface AdminSnapshot {
   queued_jobs: Job[]
   job_history: Job[]
 }
+
+export type ExportFormat = 'json' | 'html'
+
+export interface ImportResult {
+  folders_created: number
+  bookmarks_created: number
+  bookmarks_skipped: number
+  tags_created: number
+  errors: string[]
+}

@@ -1,4 +1,4 @@
-"""Sentry error monitoring and tracing for the FastAPI app."""
+"""Sentry error monitoring, tracing, and logs for the FastAPI app."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _running_under_pytest() -> bool:
 
 
 def init_sentry(settings: Settings) -> None:
-    """Initialize the Sentry SDK for unhandled errors and request tracing.
+    """Initialize the Sentry SDK for unhandled errors, request tracing, and logs.
 
     Skips initialization when the DSN is empty or when running under pytest so
     unit tests do not send events.
@@ -64,4 +64,5 @@ def init_sentry(settings: Settings) -> None:
         # https://docs.sentry.io/platforms/python/data-management/data-collected/
         send_default_pii=True,
         traces_sampler=traces_sampler,
+        enable_logs=True,
     )

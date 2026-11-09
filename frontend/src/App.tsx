@@ -14,7 +14,13 @@ import {
   adminSectionMeta,
   parseAdminSection,
 } from './AdminConsole'
-import type { Bookmark, Folder, FolderTreeNode } from './types'
+import type {
+  Bookmark,
+  ExportFormat,
+  Folder,
+  FolderTreeNode,
+  ImportResult,
+} from './types'
 import './App.css'
 
 const DESCRIPTION_MAX_LENGTH = 256
@@ -90,6 +96,19 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [folderModalOpen, setFolderModalOpen] = useState(false)
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false)
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('json')
+  const [exportScope, setExportScope] = useState<'all' | 'folder'>('all')
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importTargetScope, setImportTargetScope] = useState<'root' | 'current'>(
+    'root',
+  )
+  const [importSkipExisting, setImportSkipExisting] = useState(true)
+  const [importEnqueueThumbnails, setImportEnqueueThumbnails] = useState(true)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
   const [folderPendingDelete, setFolderPendingDelete] = useState<Folder | null>(
     null,
   )
@@ -438,6 +457,31 @@ export default function App() {
               <Button size="sm" variant="secondary" onPress={() => void reload()}>
                 Refresh
               </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => {
+                  setExportScope(selectedFolderId != null ? 'folder' : 'all')
+                  setExportModalOpen(true)
+                }}
+              >
+                Export
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => {
+                  setImportFile(null)
+                  setImportResult(null)
+                  setImportError(null)
+                  setImportTargetScope(
+                    selectedFolderId != null ? 'current' : 'root',
+                  )
+                  setImportModalOpen(true)
+                }}
+              >
+                Import
+              </Button>
               {selectedFolderId != null ? (
                 <Button
                   size="sm"
@@ -566,6 +610,341 @@ export default function App() {
               Cancel
             </Button>
             <Button onPress={() => void submitBookmark()}>Save</Button>
+          </div>
+        </ModalPanel>
+      ) : null}
+
+      {exportModalOpen ? (
+        <ModalPanel
+          title="Export bookmarks"
+          onClose={() => setExportModalOpen(false)}
+        >
+          <div style={{ padding: '0.9rem', display: 'grid', gap: '0.85rem' }}>
+            <div className="field">
+              <span>Format</span>
+              <div
+                style={{
+                  display: 'grid',
+                  gap: '0.45rem',
+                  marginTop: '0.2rem',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: 'var(--bb-ink)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="export-format"
+                    checked={exportFormat === 'json'}
+                    onChange={() => setExportFormat('json')}
+                  />
+                  JSON backup (full library fidelity, folders, tags)
+                </label>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: 'var(--bb-ink)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="export-format"
+                    checked={exportFormat === 'html'}
+                    onChange={() => setExportFormat('html')}
+                  />
+                  HTML file (Netscape Bookmark format for browsers)
+                </label>
+              </div>
+            </div>
+
+            {selectedFolderId != null ? (
+              <div className="field">
+                <span>Scope</span>
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: '0.45rem',
+                    marginTop: '0.2rem',
+                  }}
+                >
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                      color: 'var(--bb-ink)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="export-scope"
+                      checked={exportScope === 'folder'}
+                      onChange={() => setExportScope('folder')}
+                    />
+                    Current folder: “{currentTitle}” (and subfolders)
+                  </label>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                      color: 'var(--bb-ink)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="export-scope"
+                      checked={exportScope === 'all'}
+                      onChange={() => setExportScope('all')}
+                    />
+                    Entire library
+                  </label>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="modal-actions">
+            <Button
+              variant="secondary"
+              onPress={() => setExportModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onPress={() => {
+                const targetFolder =
+                  exportScope === 'folder' ? selectedFolderId : null
+                window.location.href = api.exportBookmarkUrl(
+                  exportFormat,
+                  targetFolder,
+                )
+                setExportModalOpen(false)
+              }}
+            >
+              Download export
+            </Button>
+          </div>
+        </ModalPanel>
+      ) : null}
+
+      {importModalOpen ? (
+        <ModalPanel
+          title="Import / restore bookmarks"
+          onClose={() => setImportModalOpen(false)}
+        >
+          <div style={{ padding: '0.9rem', display: 'grid', gap: '0.85rem' }}>
+            <div className="field">
+              <span>Choose file (.json, .html, .htm)</span>
+              <input
+                type="file"
+                accept=".json,.html,.htm"
+                onChange={(e) => {
+                  setImportFile(e.target.files?.[0] ?? null)
+                  setImportResult(null)
+                  setImportError(null)
+                }}
+                style={{
+                  color: 'var(--bb-ink)',
+                  fontSize: '0.8125rem',
+                  padding: '0.4rem 0',
+                }}
+              />
+            </div>
+
+            {selectedFolderId != null ? (
+              <div className="field">
+                <span>Destination</span>
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: '0.45rem',
+                    marginTop: '0.2rem',
+                  }}
+                >
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                      color: 'var(--bb-ink)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="import-target"
+                      checked={importTargetScope === 'root'}
+                      onChange={() => setImportTargetScope('root')}
+                    />
+                    Root level (preserve original hierarchy)
+                  </label>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                      color: 'var(--bb-ink)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="import-target"
+                      checked={importTargetScope === 'current'}
+                      onChange={() => setImportTargetScope('current')}
+                    />
+                    Inside folder “{currentTitle}”
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            <div style={{ display: 'grid', gap: '0.45rem' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.8125rem',
+                  color: 'var(--bb-ink)',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={importSkipExisting}
+                  onChange={(e) => setImportSkipExisting(e.target.checked)}
+                />
+                Skip existing bookmark URLs (prevent duplicates)
+              </label>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.8125rem',
+                  color: 'var(--bb-ink)',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={importEnqueueThumbnails}
+                  onChange={(e) => setImportEnqueueThumbnails(e.target.checked)}
+                />
+                Queue thumbnail preview generation for imported bookmarks
+              </label>
+            </div>
+
+            {importError ? (
+              <div className="error-banner">{importError}</div>
+            ) : null}
+
+            {importResult ? (
+              <div
+                style={{
+                  padding: '0.75rem',
+                  background: 'var(--bb-elevated)',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.8125rem',
+                }}
+              >
+                <p
+                  style={{
+                    margin: '0 0 0.35rem',
+                    fontWeight: 600,
+                    color: '#86efac',
+                  }}
+                >
+                  Import complete
+                </p>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: '1.2rem',
+                    color: 'var(--bb-ink)',
+                  }}
+                >
+                  <li>Bookmarks imported: {importResult.bookmarks_created}</li>
+                  <li>Folders created: {importResult.folders_created}</li>
+                  <li>
+                    Bookmarks skipped (duplicates):{' '}
+                    {importResult.bookmarks_skipped}
+                  </li>
+                  <li>Tags created: {importResult.tags_created}</li>
+                </ul>
+                {importResult.errors.length > 0 ? (
+                  <div
+                    style={{ marginTop: '0.5rem', color: 'var(--bb-faint)' }}
+                  >
+                    <p style={{ margin: '0.25rem 0' }}>Warnings:</p>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                      {importResult.errors.map((msg, i) => (
+                        <li key={i}>{msg}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="modal-actions">
+            <Button
+              variant="secondary"
+              onPress={() => setImportModalOpen(false)}
+            >
+              {importResult ? 'Close' : 'Cancel'}
+            </Button>
+            {!importResult ? (
+              <Button
+                isDisabled={!importFile || importLoading}
+                onPress={async () => {
+                  if (!importFile) return
+                  try {
+                    setImportLoading(true)
+                    setImportError(null)
+                    setImportResult(null)
+                    const text = await importFile.text()
+                    const targetId =
+                      importTargetScope === 'current' ? selectedFolderId : null
+                    const res = await api.importBookmarks(text, {
+                      target_folder_id: targetId,
+                      skip_existing: importSkipExisting,
+                      enqueue_thumbnails: importEnqueueThumbnails,
+                    })
+                    setImportResult(res)
+                    await reload()
+                  } catch (err) {
+                    setImportError(
+                      err instanceof Error ? err.message : 'Import failed',
+                    )
+                  } finally {
+                    setImportLoading(false)
+                  }
+                }}
+              >
+                {importLoading ? 'Importing…' : 'Import'}
+              </Button>
+            ) : null}
           </div>
         </ModalPanel>
       ) : null}

@@ -1,8 +1,10 @@
 import type {
   AdminSnapshot,
   Bookmark,
+  ExportFormat,
   Folder,
   FolderTreeNode,
+  ImportResult,
   Job,
   JobExecutionResult,
   Tag,
@@ -118,4 +120,35 @@ export const api = {
     request<JobExecutionResult>('/api/admin/jobs/regenerate-thumbnails', {
       method: 'POST',
     }),
+  exportBookmarkUrl: (format: ExportFormat = 'json', folderId?: number | null) => {
+    const query = new URLSearchParams()
+    query.set('format', format)
+    if (folderId != null) query.set('folder_id', String(folderId))
+    return `/api/bookmarks/export?${query}`
+  },
+  importBookmarks: (
+    content: string,
+    params?: {
+      target_folder_id?: number | null
+      skip_existing?: boolean
+      enqueue_thumbnails?: boolean
+    },
+  ) => {
+    const query = new URLSearchParams()
+    if (params?.target_folder_id != null) {
+      query.set('target_folder_id', String(params.target_folder_id))
+    }
+    if (params?.skip_existing != null) {
+      query.set('skip_existing', String(params.skip_existing))
+    }
+    if (params?.enqueue_thumbnails != null) {
+      query.set('enqueue_thumbnails', String(params.enqueue_thumbnails))
+    }
+    const suffix = query.toString() ? `?${query}` : ''
+    return request<ImportResult>(`/api/bookmarks/import${suffix}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      body: content,
+    })
+  },
 }

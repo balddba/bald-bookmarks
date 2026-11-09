@@ -64,17 +64,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
-#    ports:
-#      - "${WEB_PORT:-8080}:80"
-    networks:
-      - default
-      - proxy-net
+    ports:
+      - "${WEB_PORT:-8080}:80"
 
 volumes:
   media_data:
   sqlite_data:
-
-networks:
-  proxy-net:
-    name: proxy-net
-    external: true
